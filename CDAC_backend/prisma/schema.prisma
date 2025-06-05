@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  username       String?           @unique
+  password       String
+  fullName       String
+  role           Role             @default(USER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  devices        Device[]
+  alerts         Alert[]
+  apiKeys        ApiKey[]
+  userPreference UserPreference?
+}
+
+model UserPreference {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  themeMode          String   @default("light")
+  colorScheme        String   @default("blue")
+  animationsEnabled  Boolean  @default(true)
+  density            String   @default("comfortable")
+  roundedCorners     Boolean  @default(true)
+  fontSize           String   @default("medium")
+  emailNotifications Boolean  @default(true)
+  pushNotifications  Boolean  @default(true)
+  smsNotifications   Boolean  @default(false)
+  alertsOnly         Boolean  @default(true)
+  notificationSounds Boolean  @default(true)
+  language           String   @default("en")
+  timezone           String   @default("UTC")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  name        String
+  key         String   @unique
+  prefix      String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Device {
+  id          String       @id @default(uuid())
+  name        String
+  type        DeviceType
+  status      DeviceStatus @default(OFFLINE)
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  // New fields for efficient location tracking
+  currentLocation String?      // Current formatted location (City, Country)
+  currentLatitude Float?       // Current latitude
+  currentLongitude Float?      // Current longitude
+  lastKnownLocation String?    // Previous location
+  lastKnownLatitude Float?     // Previous latitude  
+  lastKnownLongitude Float?    // Previous longitude
+  locationUpdatedAt DateTime?  // When location was last updated
+  ipAddress   String?          // Last known IP address
+  // Geospatial indexing for efficient queries
+  batteryLevel Float?
+  firmware    String?
+  lastSeen    DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  sensorData  SensorData[]
+  alerts      Alert[]
+  
+  // Index for efficient location-based queries
+  @@index([currentLatitude, currentLongitude])
+  @@index([userId, status])
+}
+
+model SensorData {
+  id        String   @id @default(uuid())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  data      Json     // Flexible: stores ALL device data as JSON
+  timestamp DateTime @default(now())
+
+  @@index([deviceId, timestamp])
+}
+
+model Alert {
+  id          String      @id @default(uuid())
+  deviceId    String
+  device      Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  title       String
+  message     String
+  severity    AlertSeverity
+  status      AlertStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  acknowledgedAt DateTime?
+  resolvedAt  DateTime?
+  resolutionNotes String?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DeviceType {
+  TEMPERATURE_SENSOR
+  HUMIDITY_SENSOR
+  MOTION_DETECTOR
+  SMART_LIGHT
+  SMART_PLUG
+  CAMERA
+  ENERGY_METER
+  WATER_METER
+  AIR_QUALITY_SENSOR
+  OTHER
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+  ERROR
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}

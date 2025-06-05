@@ -1,0 +1,106 @@
+---
+- name: Deploy Node.js backend app with Caddy reverse proxy
+  hosts: webserver
+  become: true
+  vars:
+    domain: iot.webfuze.in
+    app_dir: /home/ubuntu/backend
+    node_version: "18.x"
+    user: ubuntu
+    app_port: 3001
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: rsync
+        state: present
+
+    - name: Install PM2 globally
+      npm:
+        name: pm2
+        global: true
+
+    - name: Ensure app directory exists
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Remove old app contents
+      file:
+        path: "{{ app_dir }}"
+        state: absent
+      when: app_dir != "/"
+
+    - name: Recreate app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy backend app to server (excluding node_modules and dotfiles)
+      synchronize:
+        src: ./
+        dest: "{{ app_dir }}"
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=.gitignore"
+
+    - name: Copy environment file
+      copy:
+        src: .env
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0600"
+
+    - name: Install app dependencies
+      shell: pnpm install
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Restart backend app with PM2
+      shell: |
+        pm2 delete "backend-app" || true
+        pm2 start npm --name "backend-app" -- start
+        pm2 save
+      args:
+        chdir: "{{ app_dir }}"
+
+    - name: Generate PM2 startup script
+      shell: |
+        export PATH=$PATH:/usr/local/bin
+        pm2 startup systemd -u {{ user }} --hp /home/{{ user }}
+      register: pm2_startup
+      become: true
+
+    - name: Ensure Caddy is installed
+      apt:
+        name: caddy
+        state: present
+
+    - name: Configure Caddy reverse proxy
+      copy:
+        dest: /etc/caddy/Caddyfile
+        content: |
+          {{ domain }} {
+              reverse_proxy localhost:{{ app_port }}
+          }
+      notify: Reload Caddy
+
+    - name: Ensure Caddy service is running and enabled
+      service:
+        name: caddy
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload Caddy
+      service:
+        name: caddy
+        state: reloaded
