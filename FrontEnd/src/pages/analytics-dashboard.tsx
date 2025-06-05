@@ -25,7 +25,7 @@ import HistoricalAnalytics from "@/components/Analytics/historical-analytics";
 import { useAnalyticsData } from "@/hooks/use-analytics-data";
 import { useVisualizationConfig } from "@/hooks/use-visualization-config";
 import { useDeviceData } from "@/hooks/use-device-data";
-import AdvancedVisualizations from "../Analytics/D3";
+import AdvancedVisualizations from "../components/Analytics/D3";
 
 // Device types from backend
 export const DEVICE_TYPES = {

@@ -41,6 +41,12 @@ export enum DeviceStatus {
   ERROR = "ERROR",
 }
 
+export enum AlertStatus {
+  ACTIVE = "ACTIVE",
+  ACKNOWLEDGED = "ACKNOWLEDGED",
+  RESOLVED = "RESOLVED",
+}
+
 export enum AlertSeverity {
   LOW = "LOW",
   MEDIUM = "MEDIUM",
@@ -48,25 +54,26 @@ export enum AlertSeverity {
   CRITICAL = "CRITICAL",
 }
 
-export enum AlertStatus {
-  ACTIVE = "ACTIVE",
-  ACKNOWLEDGED = "ACKNOWLEDGED",
-  RESOLVED = "RESOLVED",
-}
 export interface Alert {
   id: string;
-  deviceId: string;
-  userId: string;
   title: string;
   message: string;
-  severity: AlertSeverity;
+  deviceId: string;
+  userId: string;
   status: AlertStatus;
+  severity: AlertSeverity;
   createdAt: string;
   updatedAt: string;
+  timestamp?: string; // For backward compatibility
   acknowledgedAt?: string;
   resolvedAt?: string;
   resolutionNotes?: string;
-  timestamp: string;
+  device?: {
+    id: string;
+    name: string;
+    type: string;
+    location?: string;
+  };
 }
 
 export interface SensorData {
