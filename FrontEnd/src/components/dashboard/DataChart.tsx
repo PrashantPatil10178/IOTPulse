@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Area,
   AreaChart,
@@ -19,6 +19,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import clsx from "clsx";
 
 interface DataChartProps {
   title: string;
@@ -35,7 +36,7 @@ export default function DataChart({
   description,
   data,
   type = "line",
-  colors = ["#3B82F6", "#8B5CF6"],
+  colors = ["#60a5fa", "#a78bfa", "#38bdf8"],
   className,
 }: DataChartProps) {
   const [timeRange, setTimeRange] = useState("24h");
@@ -59,18 +60,27 @@ export default function DataChart({
     }
   };
 
-  // Animation variants
+  // Animation variants for card and chart
   const cardVariants = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, y: -10, transition: { duration: 0.25 } },
   };
+
+  // Chart skeleton loader
+  const ChartSkeleton = () => (
+    <div className="flex flex-col items-center justify-center h-[250px] animate-pulse">
+      <div className="w-2/3 h-8 bg-slate-200 dark:bg-slate-700 rounded mb-4" />
+      <div className="w-full h-40 bg-slate-200 dark:bg-slate-800 rounded" />
+    </div>
+  );
 
   // Determine which chart type to render
   const renderChart = () => {
     if (!filteredData || filteredData.length === 0) {
       return (
         <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-          No data available
+          <span className="text-sm">No data available</span>
         </div>
       );
     }
@@ -79,118 +89,192 @@ export default function DataChart({
       (key) => key !== "timestamp"
     );
 
+    const chartKey = `${type}-${timeRange}-${filteredData.length}`;
+
+    // Custom Legend
+    const customLegend = (
+      <Legend
+        wrapperStyle={{
+          paddingTop: 8,
+        }}
+        iconType="circle"
+        align="center"
+        verticalAlign="bottom"
+        iconSize={16}
+      />
+    );
+
     switch (type) {
       case "bar":
         return (
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={250} key={chartKey}>
             <BarChart
               data={filteredData}
-              margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              margin={{ top: 24, right: 8, left: 0, bottom: 24 }}
+              barGap={8}
             >
               <CartesianGrid
-                strokeDasharray="3 3"
+                strokeDasharray="4 4"
+                stroke="#293145"
                 vertical={false}
-                className="stroke-slate-200 dark:stroke-slate-700"
               />
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={formatXAxis}
-                stroke="#94A3B8"
-                fontSize={12}
-                tickMargin={10}
+                stroke="#7f8fae"
+                fontSize={13}
+                tickMargin={14}
+                angle={-10}
+                axisLine={false}
+                tickLine={false}
+                height={38}
               />
-              <YAxis stroke="#94A3B8" fontSize={12} />
+              <YAxis
+                stroke="#7f8fae"
+                fontSize={13}
+                axisLine={false}
+                tickLine={false}
+                width={32}
+              />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.9)",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(24, 32, 51, 0.98)",
+                  borderRadius: "12px",
                   border: "none",
-                  color: "#F1F5F9",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                  fontSize: "12px",
+                  color: "#e0e7ef",
+                  boxShadow: "0 8px 32px 0 rgba(0,0,0,0.20)",
+                  fontSize: "13px",
+                  padding: "14px",
                 }}
-                labelClassName="text-slate-300 mb-1"
+                labelClassName="text-blue-200 mb-2 font-semibold"
                 labelFormatter={(label) => format(new Date(label), "PPpp")}
+                cursor={{ fill: "rgba(96,165,250,0.08)" }}
               />
-              <Legend />
+              {customLegend}
               {dataKeys.map((key, index) => (
                 <Bar
                   key={key}
                   dataKey={key}
-                  name={key.charAt(0).toUpperCase() + key.slice(1)}
-                  fill={colors[index % colors.length]}
-                  radius={[4, 4, 0, 0]}
+                  name={key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}
+                  fill={`url(#bar-gradient-${index})`}
+                  radius={[8, 8, 0, 0]}
+                  barSize={26}
+                  className="transition-all duration-200"
+                  isAnimationActive={true}
+                  animationDuration={650}
                 />
               ))}
-            </BarChart>
-          </ResponsiveContainer>
-        );
-
-      case "area":
-        return (
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart
-              data={filteredData}
-              margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-            >
               <defs>
-                {dataKeys.map((key, index) => (
+                {dataKeys.map((_, index) => (
                   <linearGradient
-                    key={key}
-                    id={`color-${key}`}
+                    key={index}
+                    id={`bar-gradient-${index}`}
                     x1="0"
                     y1="0"
                     x2="0"
                     y2="1"
                   >
                     <stop
-                      offset="5%"
+                      offset="0%"
                       stopColor={colors[index % colors.length]}
-                      stopOpacity={0.8}
+                      stopOpacity={0.95}
                     />
                     <stop
-                      offset="95%"
+                      offset="100%"
                       stopColor={colors[index % colors.length]}
-                      stopOpacity={0.1}
+                      stopOpacity={0.4}
+                    />
+                  </linearGradient>
+                ))}
+              </defs>
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
+      case "area":
+        return (
+          <ResponsiveContainer width="100%" height={250} key={chartKey}>
+            <AreaChart
+              data={filteredData}
+              margin={{ top: 24, right: 8, left: 0, bottom: 24 }}
+            >
+              <defs>
+                {dataKeys.map((key, index) => (
+                  <linearGradient
+                    key={key}
+                    id={`area-gradient-${index}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="0%"
+                      stopColor={colors[index % colors.length]}
+                      stopOpacity={0.7}
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor={colors[index % colors.length]}
+                      stopOpacity={0.15}
                     />
                   </linearGradient>
                 ))}
               </defs>
               <CartesianGrid
-                strokeDasharray="3 3"
+                strokeDasharray="4 4"
+                stroke="#293145"
                 vertical={false}
-                className="stroke-slate-200 dark:stroke-slate-700"
               />
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={formatXAxis}
-                stroke="#94A3B8"
-                fontSize={12}
-                tickMargin={10}
+                stroke="#7f8fae"
+                fontSize={13}
+                tickMargin={14}
+                axisLine={false}
+                tickLine={false}
+                height={38}
               />
-              <YAxis stroke="#94A3B8" fontSize={12} />
+              <YAxis
+                stroke="#7f8fae"
+                fontSize={13}
+                axisLine={false}
+                tickLine={false}
+                width={32}
+              />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.9)",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(24, 32, 51, 0.98)",
+                  borderRadius: "12px",
                   border: "none",
-                  color: "#F1F5F9",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                  fontSize: "12px",
+                  color: "#e0e7ef",
+                  boxShadow: "0 8px 32px 0 rgba(0,0,0,0.20)",
+                  fontSize: "13px",
+                  padding: "14px",
                 }}
-                labelClassName="text-slate-300 mb-1"
+                labelClassName="text-blue-200 mb-2 font-semibold"
                 labelFormatter={(label) => format(new Date(label), "PPpp")}
+                cursor={{ fill: "rgba(96,165,250,0.04)" }}
               />
-              <Legend />
+              {customLegend}
               {dataKeys.map((key, index) => (
                 <Area
                   key={key}
                   type="monotone"
                   dataKey={key}
-                  name={key.charAt(0).toUpperCase() + key.slice(1)}
+                  name={key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}
                   stroke={colors[index % colors.length]}
                   fillOpacity={1}
-                  fill={`url(#color-${key})`}
+                  fill={`url(#area-gradient-${index})`}
+                  strokeWidth={2.5}
+                  activeDot={{ r: 5, fill: colors[index % colors.length] }}
+                  isAnimationActive={true}
+                  animationDuration={650}
                 />
               ))}
             </AreaChart>
@@ -200,47 +284,72 @@ export default function DataChart({
       case "line":
       default:
         return (
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={250} key={chartKey}>
             <LineChart
               data={filteredData}
-              margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+              margin={{ top: 24, right: 8, left: 0, bottom: 24 }}
             >
               <CartesianGrid
-                strokeDasharray="3 3"
+                strokeDasharray="4 4"
+                stroke="#293145"
                 vertical={false}
-                className="stroke-slate-200 dark:stroke-slate-700"
               />
               <XAxis
                 dataKey="timestamp"
                 tickFormatter={formatXAxis}
-                stroke="#94A3B8"
-                fontSize={12}
-                tickMargin={10}
+                stroke="#7f8fae"
+                fontSize={13}
+                tickMargin={14}
+                axisLine={false}
+                tickLine={false}
+                height={38}
               />
-              <YAxis stroke="#94A3B8" fontSize={12} />
+              <YAxis
+                stroke="#7f8fae"
+                fontSize={13}
+                axisLine={false}
+                tickLine={false}
+                width={32}
+              />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "rgba(15, 23, 42, 0.9)",
-                  borderRadius: "8px",
+                  backgroundColor: "rgba(24, 32, 51, 0.98)",
+                  borderRadius: "12px",
                   border: "none",
-                  color: "#F1F5F9",
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                  fontSize: "12px",
+                  color: "#e0e7ef",
+                  boxShadow: "0 8px 32px 0 rgba(0,0,0,0.20)",
+                  fontSize: "13px",
+                  padding: "14px",
                 }}
-                labelClassName="text-slate-300 mb-1"
+                labelClassName="text-blue-200 mb-2 font-semibold"
                 labelFormatter={(label) => format(new Date(label), "PPpp")}
+                cursor={{ fill: "rgba(96,165,250,0.03)" }}
               />
-              <Legend />
+              {customLegend}
               {dataKeys.map((key, index) => (
                 <Line
                   key={key}
                   type="monotone"
                   dataKey={key}
-                  name={key.charAt(0).toUpperCase() + key.slice(1)}
+                  name={key
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())}
                   stroke={colors[index % colors.length]}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 6, strokeWidth: 0 }}
+                  strokeWidth={3}
+                  dot={{
+                    r: 5,
+                    fill: "#1e293b",
+                    stroke: colors[index % colors.length],
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{
+                    r: 8,
+                    fill: colors[index % colors.length],
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                  }}
+                  isAnimationActive={true}
+                  animationDuration={650}
                 />
               ))}
             </LineChart>
@@ -254,15 +363,22 @@ export default function DataChart({
       variants={cardVariants}
       initial="initial"
       animate="animate"
-      className={className}
+      exit="exit"
+      className={clsx(
+        "w-full max-w-full",
+        "transition-colors duration-300 ease-in-out",
+        className
+      )}
     >
-      <Card className="border dark:border-slate-800">
-        <CardHeader className="p-4 pb-0">
+      <Card className="bg-[#101624] border border-[#23283a] rounded-2xl shadow-xl px-2 pt-3 pb-2 md:px-5 md:pt-5 md:pb-4 transition-shadow duration-300 hover:shadow-2xl">
+        <CardHeader className="px-2 pt-0 pb-0 md:px-0 md:pt-0 md:pb-0">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0">
             <div>
-              <CardTitle className="text-base font-semibold">{title}</CardTitle>
+              <CardTitle className="text-lg font-bold text-slate-100 tracking-tight">
+                {title}
+              </CardTitle>
               {description && (
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                   {description}
                 </p>
               )}
@@ -270,23 +386,41 @@ export default function DataChart({
             <Tabs
               value={timeRange}
               onValueChange={setTimeRange}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto mt-2 md:mt-0"
             >
-              <TabsList className="grid grid-cols-3 w-full md:w-auto bg-slate-100 dark:bg-slate-800">
-                <TabsTrigger value="24h" className="text-xs">
-                  24h
-                </TabsTrigger>
-                <TabsTrigger value="7d" className="text-xs">
-                  7d
-                </TabsTrigger>
-                <TabsTrigger value="30d" className="text-xs">
-                  30d
-                </TabsTrigger>
+              <TabsList className="flex gap-1 bg-[#222741] border border-[#23283a] rounded-full p-1 shadow-sm">
+                {["24h", "7d", "30d"].map((tab) => (
+                  <TabsTrigger
+                    key={tab}
+                    value={tab}
+                    className={clsx(
+                      "text-xs px-4 py-1 rounded-full transition-all font-semibold",
+                      timeRange === tab
+                        ? "bg-blue-500 text-white shadow"
+                        : "text-blue-200 hover:bg-blue-900/30"
+                    )}
+                  >
+                    {tab}
+                  </TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-6">{renderChart()}</CardContent>
+        <CardContent className="p-0 pt-3 md:p-0 md:pt-6 min-h-[280px]">
+          {/* AnimatePresence for smooth fade on data/chart change */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={timeRange + "-" + type + "-" + (filteredData?.length || 0)}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.45 } }}
+              exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
+              className="h-full"
+            >
+              {data ? renderChart() : <ChartSkeleton />}
+            </motion.div>
+          </AnimatePresence>
+        </CardContent>
       </Card>
     </motion.div>
   );

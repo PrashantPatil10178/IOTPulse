@@ -3,7 +3,7 @@ import axios from "axios";
 export const API_BASE_URL = "https://iot.webfuze.in/api";
 
 export const api = axios.create({
-  baseURL: "http://localhost:3001/api",
+  baseURL: import.meta.env.PROD ? API_BASE_URL : "http://localhost:3001/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -25,18 +25,18 @@ api.interceptors.request.use(
   }
 );
 
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response?.status === 401) {
-//       if (typeof window !== "undefined") {
-//         localStorage.removeItem("iot-dashboard-token");
-//         window.location.href = "/login";
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("iot-dashboard-token");
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const deviceApi = {
   create: async (deviceData: {

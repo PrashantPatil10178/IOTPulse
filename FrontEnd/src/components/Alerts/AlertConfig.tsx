@@ -80,6 +80,7 @@ import alertsService from "@/services/alertService";
 import type { Device } from "@/types";
 import { AlertSeverity } from "@/types";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 // Define AlertRule interface locally
 interface AlertRule {
@@ -477,11 +478,15 @@ export default function AlertConfigDialog({
   const [creating, setCreating] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Current user info
   const currentUser = {
-    username: "Nikhil178-tech",
-    loginTime: "2025-06-05 09:34:24",
+    username: user?.username || "Guest",
+    loginTime: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
   };
 
   // New rule form state with proper defaults

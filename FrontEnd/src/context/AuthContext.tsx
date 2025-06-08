@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import axios from "axios";
 import { api } from "@/lib/api";
+import { redirect } from "@tanstack/react-router";
 
 interface UserPreferences {
   themeMode: string;
@@ -160,7 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("iot-dashboard-user");
     localStorage.removeItem("iot-dashboard-token");
     delete api.defaults.headers.common["Authorization"];
+
     toast.info("Logged out successfully");
+    window.location.reload();
   }, []);
 
   const useDemoCredentials = useCallback(

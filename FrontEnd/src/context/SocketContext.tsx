@@ -335,16 +335,22 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const connectSocket = () => {
       // console.log("🔌 Initializing Socket.IO connection");
 
-      const newSocket = io("http://localhost:3001", {
-        auth: {
-          token: localStorage.getItem("iot-dashboard-token") || "",
-        },
-        transports: ["websocket", "polling"],
-        timeout: SOCKET_TIMEOUT,
-        forceNew: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: RECONNECT_DELAY,
-      });
+      const newSocket = io(
+        import.meta.env.PROD
+          ? "https://iot.webfuze.in"
+          : "http://localhost:3001",
+        {
+          auth: {
+            token: localStorage.getItem("iot-dashboard-token") || "",
+          },
+          transports: ["websocket", "polling"],
+          path: "/socket",
+          timeout: SOCKET_TIMEOUT,
+          forceNew: true,
+          reconnectionAttempts: 3,
+          reconnectionDelay: RECONNECT_DELAY,
+        }
+      );
 
       // Connection event handlers
       newSocket.on("connect", () => {
@@ -990,5 +996,89 @@ export function useDeviceStats() {
     receivingDataDevices: receivingDevices,
     deviceErrors,
     isConnected,
+  };
+}
+
+export function useMultipleDevicesData(deviceIds: string[]) {
+  const { getLatestSyncedData, getDeviceStatus } = useSocket();
+  const [devicesData, setDevicesData] = useState<
+    Map<
+      string,
+      {
+        data: DeviceData | null;
+        status: ReturnType<typeof getDeviceStatus>;
+      }
+    >
+  >(new Map());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newDevicesData = new Map();
+
+      deviceIds.forEach((deviceId) => {
+        const data = getLatestSyncedData(deviceId);
+        const status = getDeviceStatus(deviceId);
+        newDevicesData.set(deviceId, { data, status });
+      });
+
+      setDevicesData(newDevicesData);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [deviceIds, getLatestSyncedData, getDeviceStatus]);
+
+  return {
+    devicesData,
+    getDeviceData: (deviceId: string) =>
+      devicesData.get(deviceId)?.data || null,
+    getDeviceStatus: (deviceId: string) => devicesData.get(deviceId)?.status,
+    getAllActiveDevices: () =>
+      Array.from(devicesData.entries())
+        .filter(
+          ([_, { status }]) => status.connectionStatus === "RECEIVING_DATA"
+        )
+        .map(([deviceId]) => deviceId),
+  };
+}
+
+// Enhanced hook for real-time dashboard stats
+export function useRealtimeDashboardStats() {
+  const { stats, deviceErrors, isConnected } = useDeviceStats();
+  const [realtimeStats, setRealtimeStats] = useState({
+    ...stats,
+    connectionHealth: "good" as "good" | "warning" | "critical",
+    systemStatus: "operational" as "operational" | "degraded" | "down",
+  });
+
+  useEffect(() => {
+    const connectionHealth =
+      stats.errorDevices > stats.totalDevices * 0.5
+        ? "critical"
+        : stats.errorDevices > stats.totalDevices * 0.2
+        ? "warning"
+        : "good";
+
+    const systemStatus = !isConnected
+      ? "down"
+      : stats.errorDevices > stats.totalDevices * 0.3
+      ? "degraded"
+      : "operational";
+
+    setRealtimeStats({
+      ...stats,
+      connectionHealth,
+      systemStatus,
+    });
+  }, [stats, isConnected]);
+
+  return {
+    ...realtimeStats,
+    healthScore: Math.max(
+      0,
+      100 -
+        (realtimeStats.errorDevices / Math.max(realtimeStats.totalDevices, 1)) *
+          100
+    ),
+    uptime: isConnected ? "Connected" : "Disconnected",
   };
 }

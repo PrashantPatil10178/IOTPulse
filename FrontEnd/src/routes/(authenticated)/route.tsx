@@ -12,8 +12,7 @@ function AuthenticatedLayout() {
 export const Route = createFileRoute("/(authenticated)")({
   component: AuthenticatedLayout,
   beforeLoad: async ({ location }) => {
-    // Check if user is authenticated
-    const savedUser = localStorage.getItem("iot-dashboard-user");
+    const savedUser = localStorage.getItem("iot-dashboard-token");
     if (!savedUser) {
       throw redirect({
         to: "/login",

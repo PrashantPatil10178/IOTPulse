@@ -1,0 +1,154 @@
+---
+- name: Deploy Node.js backend and React frontend with Caddy reverse proxy
+  hosts: webserver
+  become: true
+  vars:
+    domain: iot.webfuze.in
+    backend_dir: /home/ubuntu/backend
+    frontend_dir: /home/ubuntu/frontend
+    node_version: "18.x"
+    user: ubuntu
+    backend_port: 3001
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: rsync
+        state: present
+
+    - name: Install PM2 globally
+      npm:
+        name: pm2
+        global: true
+
+    - name: Ensure backend directory exists
+      file:
+        path: "{{ backend_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Remove old backend contents
+      file:
+        path: "{{ backend_dir }}"
+        state: absent
+      when: backend_dir != "/"
+
+    - name: Recreate backend directory
+      file:
+        path: "{{ backend_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy backend app to server (excluding node_modules and dotfiles)
+      synchronize:
+        src: ./Backend/
+        dest: "{{ backend_dir }}"
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=.gitignore"
+
+    - name: Copy backend environment file if exists
+      copy:
+        src: ./Backend/.env
+        dest: "{{ backend_dir }}/.env"
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0600"
+      ignore_errors: true
+
+    - name: Install backend app dependencies
+      shell: pnpm install
+      args:
+        chdir: "{{ backend_dir }}"
+
+    - name: Restart backend app with PM2
+      shell: |
+        pm2 delete "backend-app" || true
+        pm2 start npm --name "backend-app" -- start
+        pm2 save
+      args:
+        chdir: "{{ backend_dir }}"
+
+    - name: Generate PM2 startup script
+      shell: |
+        export PATH=$PATH:/usr/local/bin
+        pm2 startup systemd -u {{ user }} --hp /home/{{ user }}
+      register: pm2_startup
+      become: true
+
+    - name: Ensure frontend directory exists
+      file:
+        path: "{{ frontend_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Remove old frontend contents
+      file:
+        path: "{{ frontend_dir }}"
+        state: absent
+      when: frontend_dir != "/"
+
+    - name: Recreate frontend directory
+      file:
+        path: "{{ frontend_dir }}"
+        state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0755"
+
+    - name: Copy frontend app to server (excluding node_modules and dotfiles)
+      synchronize:
+        src: ./FrontEnd/
+        dest: "{{ frontend_dir }}"
+        rsync_opts:
+          - "--exclude=node_modules"
+          - "--exclude=.git"
+          - "--exclude=.gitignore"
+
+    - name: Create frontend .env file with PROD=true
+      copy:
+        dest: "{{ frontend_dir }}/.env"
+        content: |
+          PROD=true
+        owner: "{{ user }}"
+        group: "{{ user }}"
+        mode: "0644"
+
+    - name: Ensure Caddy is installed
+      apt:
+        name: caddy
+        state: present
+
+    - name: Configure Caddy reverse proxy
+      copy:
+        dest: /etc/caddy/Caddyfile
+        content: |
+          {{ domain }} {
+
+              root * {{ frontend_dir }}
+              file_server
+
+              reverse_proxy /api/* localhost:{{ backend_port }}
+              reverse_proxy /socket localhost:{{ backend_port }}
+              reverse_proxy /health localhost:{{ backend_port }}
+          }
+      notify: Reload Caddy
+
+    - name: Ensure Caddy service is running and enabled
+      service:
+        name: caddy
+        state: started
+        enabled: true
+
+  handlers:
+    - name: Reload Caddy
+      service:
+        name: caddy
+        state: reloaded

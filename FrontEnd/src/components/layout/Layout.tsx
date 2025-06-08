@@ -18,7 +18,6 @@ import {
   Settings,
   Sun,
   Moon,
-  UserIcon,
   X,
   LogOut,
   Plus,
@@ -28,10 +27,8 @@ import {
   Info,
   Wifi,
   WifiOff,
-  Circle,
   Dot,
   Check,
-  Trash2,
   ExternalLink,
   Shield,
   User as UserCircle,
@@ -53,7 +50,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -180,7 +176,6 @@ export default function Layout({ children, currentPageName }: AppLayoutProps) {
 
   const markAllAsRead = async () => {
     try {
-      // This would call your API to mark alerts as acknowledged
       setUnreadCount(0);
       setAlerts((prev) => prev.map((alert) => ({ ...alert, isNew: false })));
       toast({

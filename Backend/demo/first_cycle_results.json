@@ -1,0 +1,209 @@
+[
+  {
+    "deviceId": "3a73c501-4fee-4799-8292-492c0f7aafa8",
+    "deviceName": "Temperature Sensor",
+    "sentData": {
+      "temperature": 22.1,
+      "unit": "celsius",
+      "humidity": 71.1,
+      "pressure": 1012
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"TEMPERATURE_SENSOR sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"3a73c501-4fee-4799-8292-492c0f7aafa8\",\"deviceName\":\"Temperature Sensor\",\"deviceType\":\"TEMPERATURE_SENSOR\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"temperature\":22.1,\"unit\":\"celsius\",\"humidity\":71.1,\"pressure\":1012},\"structuredData\":{\"deviceType\":\"TEMPERATURE_SENSOR\",\"template\":{\"primaryMetric\":\"temperature\",\"secondaryMetrics\":[\"humidity\",\"pressure\"],\"chartType\":\"line\",\"unit\":\"°C\",\"icon\":\"thermometer\",\"color\":\"#ff6b6b\",\"category\":\"Environment\"},\"metrics\":{\"primary\":{\"name\":\"temperature\",\"value\":22.1,\"unit\":\"°C\"},\"secondary\":[{\"name\":\"humidity\",\"value\":71.1,\"unit\":\"%\"},{\"name\":\"pressure\",\"value\":1012,\"unit\":\"bar\"}]},\"rawData\":{\"temperature\":22.1,\"unit\":\"celsius\",\"humidity\":71.1,\"pressure\":1012},\"visualization\":{\"chartType\":\"line\",\"color\":\"#ff6b6b\",\"icon\":\"thermometer\",\"category\":\"Environment\"},\"timestamp\":\"2025-06-08T17:38:37.697Z\"},\"sensorDataId\":\"95439ce7-22b7-4932-ad18-63ba09cfe003\",\"dataStructure\":{\"primaryMetric\":\"temperature\",\"secondaryMetrics\":[\"humidity\",\"pressure\"],\"chartType\":\"line\",\"unit\":\"°C\",\"icon\":\"thermometer\",\"color\":\"#ff6b6b\",\"category\":\"Environment\"}},\"timestamp\":\"2025-06-08T17:38:37.958Z\"}"
+  },
+  {
+    "deviceId": "ebdc1691-e39a-4f51-8411-7e4b2f37631d",
+    "deviceName": "Humidity Sensor",
+    "sentData": {
+      "humidity": 65.9,
+      "unit": "percent",
+      "temperature": 24.1,
+      "dewPoint": 19.4
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"HUMIDITY_SENSOR sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"ebdc1691-e39a-4f51-8411-7e4b2f37631d\",\"deviceName\":\"Humidity Sensor\",\"deviceType\":\"HUMIDITY_SENSOR\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"humidity\":65.9,\"unit\":\"percent\",\"temperature\":24.1,\"dewPoint\":19.4},\"structuredData\":{\"deviceType\":\"HUMIDITY_SENSOR\",\"template\":{\"primaryMetric\":\"humidity\",\"secondaryMetrics\":[\"temperature\",\"dewPoint\"],\"chartType\":\"gauge\",\"unit\":\"%\",\"icon\":\"droplet\",\"color\":\"#4ecdc4\",\"category\":\"Environment\"},\"metrics\":{\"primary\":{\"name\":\"humidity\",\"value\":65.9,\"unit\":\"%\"},\"secondary\":[{\"name\":\"temperature\",\"value\":24.1,\"unit\":\"percent\"},{\"name\":\"dewPoint\",\"value\":19.4,\"unit\":\"\"}]},\"rawData\":{\"humidity\":65.9,\"unit\":\"percent\",\"temperature\":24.1,\"dewPoint\":19.4},\"visualization\":{\"chartType\":\"gauge\",\"color\":\"#4ecdc4\",\"icon\":\"droplet\",\"category\":\"Environment\"},\"timestamp\":\"2025-06-08T17:38:37.954Z\"},\"sensorDataId\":\"2a32a5f6-9079-4715-9a6a-fbacfb361296\",\"dataStructure\":{\"primaryMetric\":\"humidity\",\"secondaryMetrics\":[\"temperature\",\"dewPoint\"],\"chartType\":\"gauge\",\"unit\":\"%\",\"icon\":\"droplet\",\"color\":\"#4ecdc4\",\"category\":\"Environment\"}},\"timestamp\":\"2025-06-08T17:38:38.210Z\"}"
+  },
+  {
+    "deviceId": "1b4061ed-e013-4982-ba24-fd4f19e55da4",
+    "deviceName": "Smart Plug",
+    "sentData": {
+      "status": "on",
+      "powerConsumption": 1262.7,
+      "voltage": 230,
+      "current": 4.61,
+      "totalEnergyUsed": 322.4,
+      "schedule": {
+        "enabled": true,
+        "onTime": "06:00",
+        "offTime": "18:00"
+      }
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"SMART_PLUG sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"1b4061ed-e013-4982-ba24-fd4f19e55da4\",\"deviceName\":\"Smart Plug (Powering heavy machinery)\",\"deviceType\":\"SMART_PLUG\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"status\":\"on\",\"powerConsumption\":1262.7,\"voltage\":230,\"current\":4.61,\"totalEnergyUsed\":322.4,\"schedule\":{\"enabled\":true,\"onTime\":\"06:00\",\"offTime\":\"18:00\"}},\"structuredData\":{\"deviceType\":\"SMART_PLUG\",\"template\":{\"primaryMetric\":\"powerConsumption\",\"secondaryMetrics\":[\"voltage\",\"current\",\"totalEnergyUsed\"],\"chartType\":\"bar\",\"unit\":\"W\",\"icon\":\"plug\",\"color\":\"#6bcf7f\",\"category\":\"Smart Home\"},\"metrics\":{\"primary\":{\"name\":\"powerConsumption\",\"value\":1262.7,\"unit\":\"W\"},\"secondary\":[{\"name\":\"voltage\",\"value\":230,\"unit\":\"V\"},{\"name\":\"current\",\"value\":4.61,\"unit\":\"A\"},{\"name\":\"totalEnergyUsed\",\"value\":322.4,\"unit\":\"\"}]},\"rawData\":{\"status\":\"on\",\"powerConsumption\":1262.7,\"voltage\":230,\"current\":4.61,\"totalEnergyUsed\":322.4,\"schedule\":{\"enabled\":true,\"onTime\":\"06:00\",\"offTime\":\"18:00\"}},\"visualization\":{\"chartType\":\"bar\",\"color\":\"#6bcf7f\",\"icon\":\"plug\",\"category\":\"Smart Home\"},\"timestamp\":\"2025-06-08T17:38:38.177Z\"},\"sensorDataId\":\"e578bd2b-3163-4f93-b10b-41cca6f5b77e\",\"dataStructure\":{\"primaryMetric\":\"powerConsumption\",\"secondaryMetrics\":[\"voltage\",\"current\",\"totalEnergyUsed\"],\"chartType\":\"bar\",\"unit\":\"W\",\"icon\":\"plug\",\"color\":\"#6bcf7f\",\"category\":\"Smart Home\"}},\"timestamp\":\"2025-06-08T17:38:38.393Z\"}"
+  },
+  {
+    "deviceId": "e43ab856-45d2-4c82-a225-68f963f66f91",
+    "deviceName": "Camera",
+    "sentData": {
+      "status": "offline",
+      "resolution": "1920x1080",
+      "fps": 23,
+      "motionDetected": true,
+      "nightVision": true,
+      "batteryLevel": 80,
+      "storageUsed": 103,
+      "recordingDuration": 453
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"CAMERA sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"e43ab856-45d2-4c82-a225-68f963f66f91\",\"deviceName\":\"Camera (Surveillance in secure area)\",\"deviceType\":\"CAMERA\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"status\":\"offline\",\"resolution\":\"1920x1080\",\"fps\":23,\"motionDetected\":true,\"nightVision\":true,\"storageUsed\":103,\"batteryLevel\":80,\"recordingDuration\":453},\"structuredData\":{\"deviceType\":\"CAMERA\",\"template\":{\"primaryMetric\":\"status\",\"secondaryMetrics\":[\"motionDetected\",\"batteryLevel\"],\"chartType\":\"status\",\"unit\":\"status\",\"icon\":\"camera\",\"color\":\"#4d96ff\",\"category\":\"Security\"},\"metrics\":{\"primary\":{\"name\":\"status\",\"value\":\"offline\",\"unit\":\"status\"},\"secondary\":[{\"name\":\"motionDetected\",\"value\":true,\"unit\":\"\"},{\"name\":\"batteryLevel\",\"value\":80,\"unit\":\"%\"}]},\"rawData\":{\"status\":\"offline\",\"resolution\":\"1920x1080\",\"fps\":23,\"motionDetected\":true,\"nightVision\":true,\"storageUsed\":103,\"batteryLevel\":80,\"recordingDuration\":453},\"visualization\":{\"chartType\":\"status\",\"color\":\"#4d96ff\",\"icon\":\"camera\",\"category\":\"Security\"},\"timestamp\":\"2025-06-08T17:38:38.201Z\"},\"sensorDataId\":\"74fa467a-cdf6-477c-a2e7-0e3fd7e01394\",\"dataStructure\":{\"primaryMetric\":\"status\",\"secondaryMetrics\":[\"motionDetected\",\"batteryLevel\"],\"chartType\":\"status\",\"unit\":\"status\",\"icon\":\"camera\",\"color\":\"#4d96ff\",\"category\":\"Security\"}},\"timestamp\":\"2025-06-08T17:38:38.424Z\"}"
+  },
+  {
+    "deviceId": "f7631d3f-0201-42df-b23c-7b1f4646d924",
+    "deviceName": "Energy Meter",
+    "sentData": {
+      "powerUsage": 3960,
+      "totalEnergy": 15583.8,
+      "voltage": 230,
+      "current": 15.14,
+      "frequency": 50,
+      "powerFactor": 0.97,
+      "cost": 429.24,
+      "peakDemand": 4556.2,
+      "timestamp": "2025-06-08T17:38:37.198Z"
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"ENERGY_METER sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"f7631d3f-0201-42df-b23c-7b1f4646d924\",\"deviceName\":\"Energy Meter (Tracking power in production unit)\",\"deviceType\":\"ENERGY_METER\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"timestamp\":\"2025-06-08T17:38:37.198Z\",\"powerUsage\":3960,\"totalEnergy\":15583.8,\"voltage\":230,\"current\":15.14,\"frequency\":50,\"powerFactor\":0.97,\"cost\":429.24,\"peakDemand\":4556.2},\"structuredData\":{\"deviceType\":\"ENERGY_METER\",\"template\":{\"primaryMetric\":\"powerUsage\",\"secondaryMetrics\":[\"totalEnergy\",\"voltage\",\"current\"],\"chartType\":\"multiline\",\"unit\":\"W\",\"icon\":\"zap\",\"color\":\"#ff9f43\",\"category\":\"Energy\"},\"metrics\":{\"primary\":{\"name\":\"powerUsage\",\"value\":3960,\"unit\":\"W\"},\"secondary\":[{\"name\":\"totalEnergy\",\"value\":15583.8,\"unit\":\"\"},{\"name\":\"voltage\",\"value\":230,\"unit\":\"V\"},{\"name\":\"current\",\"value\":15.14,\"unit\":\"A\"}]},\"rawData\":{\"timestamp\":\"2025-06-08T17:38:37.198Z\",\"powerUsage\":3960,\"totalEnergy\":15583.8,\"voltage\":230,\"current\":15.14,\"frequency\":50,\"powerFactor\":0.97,\"cost\":429.24,\"peakDemand\":4556.2},\"visualization\":{\"chartType\":\"multiline\",\"color\":\"#ff9f43\",\"icon\":\"zap\",\"category\":\"Energy\"},\"timestamp\":\"2025-06-08T17:38:37.198Z\"},\"sensorDataId\":\"bc68b92a-8763-4754-8dde-12987b7796f5\",\"dataStructure\":{\"primaryMetric\":\"powerUsage\",\"secondaryMetrics\":[\"totalEnergy\",\"voltage\",\"current\"],\"chartType\":\"multiline\",\"unit\":\"W\",\"icon\":\"zap\",\"color\":\"#ff9f43\",\"category\":\"Energy\"}},\"timestamp\":\"2025-06-08T17:38:38.443Z\"}"
+  },
+  {
+    "deviceId": "9494f46f-3017-474b-ac8c-bc314f605679",
+    "deviceName": "Vibration Sensor",
+    "sentData": {
+      "sensorType": "vibration",
+      "primaryMetric": {
+        "name": "vibration_intensity",
+        "value": 1.45,
+        "unit": "mm/s",
+        "min": 0,
+        "max": 10
+      },
+      "secondaryMetrics": [
+        {
+          "name": "frequency",
+          "value": 103,
+          "unit": "Hz",
+          "min": 0,
+          "max": 1000
+        },
+        {
+          "name": "temperature",
+          "value": 29.3,
+          "unit": "celsius",
+          "min": 0,
+          "max": 100
+        }
+      ],
+      "status": "active",
+      "batteryLevel": 94,
+      "signalStrength": 85,
+      "metadata": {
+        "location": "Machine Shop A",
+        "notes": "Monitoring conveyor motor",
+        "calibrationDate": "2025-05-15T00:00:00Z",
+        "firmware": "v2.1.0"
+      }
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"OTHER sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"9494f46f-3017-474b-ac8c-bc314f605679\",\"deviceName\":\"Vibration Sensor (Monitoring machinery vibration)\",\"deviceType\":\"OTHER\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"sensorType\":\"vibration\",\"primaryMetric\":{\"name\":\"vibration_intensity\",\"value\":1.45,\"unit\":\"mm/s\",\"min\":0,\"max\":10},\"secondaryMetrics\":[{\"name\":\"frequency\",\"value\":103,\"unit\":\"Hz\",\"min\":0,\"max\":1000},{\"name\":\"temperature\",\"value\":29.3,\"unit\":\"celsius\",\"min\":0,\"max\":100}],\"status\":\"active\",\"batteryLevel\":94,\"signalStrength\":85,\"metadata\":{\"location\":\"Machine Shop A\",\"notes\":\"Monitoring conveyor motor\",\"calibrationDate\":\"2025-05-15T00:00:00Z\",\"firmware\":\"v2.1.0\"}},\"structuredData\":{\"deviceType\":\"OTHER\",\"template\":{\"primaryMetric\":\"vibration_intensity\",\"secondaryMetrics\":[\"secondaryMetrics\"],\"chartType\":\"line\",\"unit\":\"mm/s\",\"icon\":\"radio\",\"color\":\"#FF4500\",\"category\":\"Generic\"},\"metrics\":{\"primary\":{\"name\":\"vibration_intensity\",\"value\":1.45,\"unit\":\"mm/s\",\"min\":0,\"max\":10},\"secondary\":[{\"name\":\"frequency\",\"value\":103,\"unit\":\"Hz\",\"min\":0,\"max\":1000},{\"name\":\"temperature\",\"value\":29.3,\"unit\":\"celsius\",\"min\":0,\"max\":100}]},\"sensorType\":\"vibration\",\"status\":\"active\",\"batteryLevel\":94,\"signalStrength\":85,\"metadata\":{\"location\":\"Machine Shop A\",\"notes\":\"Monitoring conveyor motor\",\"calibrationDate\":\"2025-05-15T00:00:00Z\",\"firmware\":\"v2.1.0\"},\"rawData\":{\"sensorType\":\"vibration\",\"primaryMetric\":{\"name\":\"vibration_intensity\",\"value\":1.45,\"unit\":\"mm/s\",\"min\":0,\"max\":10},\"secondaryMetrics\":[{\"name\":\"frequency\",\"value\":103,\"unit\":\"Hz\",\"min\":0,\"max\":1000},{\"name\":\"temperature\",\"value\":29.3,\"unit\":\"celsius\",\"min\":0,\"max\":100}],\"status\":\"active\",\"batteryLevel\":94,\"signalStrength\":85,\"metadata\":{\"location\":\"Machine Shop A\",\"notes\":\"Monitoring conveyor motor\",\"calibrationDate\":\"2025-05-15T00:00:00Z\",\"firmware\":\"v2.1.0\"}},\"timestamp\":\"2025-06-08T17:38:38.466Z\"},\"sensorDataId\":\"bc8ce9c9-e452-4f7f-b8be-6bd51494fc06\",\"dataStructure\":{\"primaryMetric\":\"primaryMetric.value\",\"secondaryMetrics\":[\"secondaryMetrics\"],\"chartType\":\"dynamic\",\"unit\":\"dynamic\",\"icon\":\"settings\",\"color\":\"#95a5a6\",\"category\":\"Generic\"}},\"timestamp\":\"2025-06-08T17:38:38.752Z\"}"
+  },
+  {
+    "deviceId": "073c6775-fbb9-4880-94d6-aa6ff0dcfa22",
+    "deviceName": "Water Meter",
+    "sentData": {
+      "flowRate": 21.1,
+      "totalVolume": 9163.5,
+      "pressure": 2.03,
+      "temperature": 16.2,
+      "quality": {
+        "ph": 7.18,
+        "turbidity": 0.74,
+        "tds": 183
+      },
+      "leakDetected": false
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"WATER_METER sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"073c6775-fbb9-4880-94d6-aa6ff0dcfa22\",\"deviceName\":\"Water Meter (Cooling system water usage)\",\"deviceType\":\"WATER_METER\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"flowRate\":21.1,\"totalVolume\":9163.5,\"pressure\":2.03,\"temperature\":16.2,\"quality\":{\"ph\":7.18,\"turbidity\":0.74,\"tds\":183},\"leakDetected\":false},\"structuredData\":{\"deviceType\":\"WATER_METER\",\"template\":{\"primaryMetric\":\"flowRate\",\"secondaryMetrics\":[\"totalVolume\",\"pressure\"],\"chartType\":\"area\",\"unit\":\"L/min\",\"icon\":\"droplets\",\"color\":\"#54a0ff\",\"category\":\"Utilities\"},\"metrics\":{\"primary\":{\"name\":\"flowRate\",\"value\":21.1,\"unit\":\"L/min\"},\"secondary\":[{\"name\":\"totalVolume\",\"value\":9163.5,\"unit\":\"L\"},{\"name\":\"pressure\",\"value\":2.03,\"unit\":\"bar\"}]},\"rawData\":{\"flowRate\":21.1,\"totalVolume\":9163.5,\"pressure\":2.03,\"temperature\":16.2,\"quality\":{\"ph\":7.18,\"turbidity\":0.74,\"tds\":183},\"leakDetected\":false},\"visualization\":{\"chartType\":\"area\",\"color\":\"#54a0ff\",\"icon\":\"droplets\",\"category\":\"Utilities\"},\"timestamp\":\"2025-06-08T17:38:38.658Z\"},\"sensorDataId\":\"4e43b08e-7e68-4968-829f-cf994e10ae60\",\"dataStructure\":{\"primaryMetric\":\"flowRate\",\"secondaryMetrics\":[\"totalVolume\",\"pressure\"],\"chartType\":\"area\",\"unit\":\"L/min\",\"icon\":\"droplets\",\"color\":\"#54a0ff\",\"category\":\"Utilities\"}},\"timestamp\":\"2025-06-08T17:38:38.855Z\"}"
+  },
+  {
+    "deviceId": "e3c3ee3a-2263-4122-b142-0fce7f6eae68",
+    "deviceName": "Pressure Sensor",
+    "sentData": {
+      "sensorType": "pressure",
+      "primaryMetric": {
+        "name": "pressure",
+        "value": 3.63,
+        "unit": "bar",
+        "min": 0,
+        "max": 10
+      },
+      "secondaryMetrics": [
+        {
+          "name": "flow_rate",
+          "value": 12.3,
+          "unit": "L/min",
+          "min": 0,
+          "max": 50
+        },
+        {
+          "name": "temperature",
+          "value": 26.1,
+          "unit": "celsius",
+          "min": -10,
+          "max": 80
+        }
+      ],
+      "status": "active",
+      "batteryLevel": 92,
+      "signalStrength": 93,
+      "metadata": {
+        "location": "Pipeline Section B",
+        "notes": "Monitoring hydraulic system",
+        "calibrationDate": "2025-05-20T00:00:00Z",
+        "firmware": "v1.3.2"
+      },
+      "timestamp": "2025-06-08T17:38:37.199Z"
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"OTHER sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"e3c3ee3a-2263-4122-b142-0fce7f6eae68\",\"deviceName\":\"Pressure Sensor (Monitoring pipeline pressure)\",\"deviceType\":\"OTHER\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"timestamp\":\"2025-06-08T17:38:37.199Z\",\"sensorType\":\"pressure\",\"primaryMetric\":{\"name\":\"pressure\",\"value\":3.63,\"unit\":\"bar\",\"min\":0,\"max\":10},\"secondaryMetrics\":[{\"name\":\"flow_rate\",\"value\":12.3,\"unit\":\"L/min\",\"min\":0,\"max\":50},{\"name\":\"temperature\",\"value\":26.1,\"unit\":\"celsius\",\"min\":-10,\"max\":80}],\"status\":\"active\",\"batteryLevel\":92,\"signalStrength\":93,\"metadata\":{\"location\":\"Pipeline Section B\",\"notes\":\"Monitoring hydraulic system\",\"calibrationDate\":\"2025-05-20T00:00:00Z\",\"firmware\":\"v1.3.2\"}},\"structuredData\":{\"deviceType\":\"OTHER\",\"template\":{\"primaryMetric\":\"pressure\",\"secondaryMetrics\":[\"secondaryMetrics\"],\"chartType\":\"gauge\",\"unit\":\"bar\",\"icon\":\"gauge\",\"color\":\"#4682B4\",\"category\":\"Generic\"},\"metrics\":{\"primary\":{\"name\":\"pressure\",\"value\":3.63,\"unit\":\"bar\",\"min\":0,\"max\":10},\"secondary\":[{\"name\":\"flow_rate\",\"value\":12.3,\"unit\":\"L/min\",\"min\":0,\"max\":50},{\"name\":\"temperature\",\"value\":26.1,\"unit\":\"celsius\",\"min\":-10,\"max\":80}]},\"sensorType\":\"pressure\",\"status\":\"active\",\"batteryLevel\":92,\"signalStrength\":93,\"metadata\":{\"location\":\"Pipeline Section B\",\"notes\":\"Monitoring hydraulic system\",\"calibrationDate\":\"2025-05-20T00:00:00Z\",\"firmware\":\"v1.3.2\"},\"rawData\":{\"timestamp\":\"2025-06-08T17:38:37.199Z\",\"sensorType\":\"pressure\",\"primaryMetric\":{\"name\":\"pressure\",\"value\":3.63,\"unit\":\"bar\",\"min\":0,\"max\":10},\"secondaryMetrics\":[{\"name\":\"flow_rate\",\"value\":12.3,\"unit\":\"L/min\",\"min\":0,\"max\":50},{\"name\":\"temperature\",\"value\":26.1,\"unit\":\"celsius\",\"min\":-10,\"max\":80}],\"status\":\"active\",\"batteryLevel\":92,\"signalStrength\":93,\"metadata\":{\"location\":\"Pipeline Section B\",\"notes\":\"Monitoring hydraulic system\",\"calibrationDate\":\"2025-05-20T00:00:00Z\",\"firmware\":\"v1.3.2\"}},\"timestamp\":\"2025-06-08T17:38:37.199Z\"},\"sensorDataId\":\"211e26bd-683b-4c2b-b05e-ea8dd77b008f\",\"dataStructure\":{\"primaryMetric\":\"primaryMetric.value\",\"secondaryMetrics\":[\"secondaryMetrics\"],\"chartType\":\"dynamic\",\"unit\":\"dynamic\",\"icon\":\"settings\",\"color\":\"#95a5a6\",\"category\":\"Generic\"}},\"timestamp\":\"2025-06-08T17:38:38.860Z\"}"
+  },
+  {
+    "deviceId": "7d26a781-1e9d-41a0-997a-97bdb403cece",
+    "deviceName": "Motion Detector",
+    "sentData": {
+      "motion": false,
+      "confidence": 83,
+      "duration": 3.1,
+      "sensitivity": 6,
+      "zone": "assembly_line_2"
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"MOTION_DETECTOR sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"7d26a781-1e9d-41a0-997a-97bdb403cece\",\"deviceName\":\"Motion Detector\",\"deviceType\":\"MOTION_DETECTOR\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"motion\":false,\"confidence\":83,\"duration\":3.1,\"sensitivity\":6,\"zone\":\"assembly_line_2\"},\"structuredData\":{\"deviceType\":\"MOTION_DETECTOR\",\"template\":{\"primaryMetric\":\"motion\",\"secondaryMetrics\":[\"confidence\",\"duration\"],\"chartType\":\"timeline\",\"unit\":\"boolean\",\"icon\":\"activity\",\"color\":\"#ffe66d\",\"category\":\"Security\"},\"metrics\":{\"primary\":{\"name\":\"motion\",\"value\":false,\"unit\":\"boolean\"},\"secondary\":[{\"name\":\"confidence\",\"value\":83,\"unit\":\"\"},{\"name\":\"duration\",\"value\":3.1,\"unit\":\"\"}]},\"rawData\":{\"motion\":false,\"confidence\":83,\"duration\":3.1,\"sensitivity\":6,\"zone\":\"assembly_line_2\"},\"visualization\":{\"chartType\":\"timeline\",\"color\":\"#ffe66d\",\"icon\":\"activity\",\"category\":\"Security\"},\"timestamp\":\"2025-06-08T17:38:38.642Z\"},\"sensorDataId\":\"d192923b-69ec-4a52-b93c-dbe937460fda\",\"dataStructure\":{\"primaryMetric\":\"motion\",\"secondaryMetrics\":[\"confidence\",\"duration\"],\"chartType\":\"timeline\",\"unit\":\"boolean\",\"icon\":\"activity\",\"color\":\"#ffe66d\",\"category\":\"Security\"}},\"timestamp\":\"2025-06-08T17:38:38.879Z\"}"
+  },
+  {
+    "deviceId": "11b11e1c-2191-4ad9-9489-e2a88b271952",
+    "deviceName": "Smart Light",
+    "sentData": {
+      "status": "on",
+      "brightness": 84,
+      "color": {
+        "r": 255,
+        "g": 255,
+        "b": 255
+      },
+      "colorTemperature": 3041,
+      "powerConsumption": 13.5,
+      "dimLevel": 84
+    },
+    "responseStatus": 201,
+    "responseBody": "{\"success\":true,\"message\":\"SMART_LIGHT sensor data processed and structured successfully\",\"data\":{\"deviceId\":\"11b11e1c-2191-4ad9-9489-e2a88b271952\",\"deviceName\":\"Smart Light\",\"deviceType\":\"SMART_LIGHT\",\"location\":{\"latitude\":18.5204,\"longitude\":73.8567,\"city\":\"Pune\",\"country\":\"India\",\"location\":\"Pune, India\",\"isPrivateIP\":true,\"note\":\"Default location for localhost/private IP\"},\"validatedData\":{\"status\":\"on\",\"brightness\":84,\"color\":{\"r\":255,\"g\":255,\"b\":255},\"colorTemperature\":3041,\"powerConsumption\":13.5,\"dimLevel\":84},\"structuredData\":{\"deviceType\":\"SMART_LIGHT\",\"template\":{\"primaryMetric\":\"status\",\"secondaryMetrics\":[\"brightness\",\"powerConsumption\"],\"chartType\":\"status\",\"unit\":\"on/off\",\"icon\":\"lightbulb\",\"color\":\"#ffd93d\",\"category\":\"Smart Home\"},\"metrics\":{\"primary\":{\"name\":\"status\",\"value\":\"on\",\"unit\":\"on/off\"},\"secondary\":[{\"name\":\"brightness\",\"value\":84,\"unit\":\"%\"},{\"name\":\"powerConsumption\",\"value\":13.5,\"unit\":\"W\"}]},\"rawData\":{\"status\":\"on\",\"brightness\":84,\"color\":{\"r\":255,\"g\":255,\"b\":255},\"colorTemperature\":3041,\"powerConsumption\":13.5,\"dimLevel\":84},\"visualization\":{\"chartType\":\"status\",\"color\":\"#ffd93d\",\"icon\":\"lightbulb\",\"category\":\"Smart Home\"},\"timestamp\":\"2025-06-08T17:38:38.663Z\"},\"sensorDataId\":\"433c471f-f5e9-4358-9c79-9d1af2aeb55e\",\"dataStructure\":{\"primaryMetric\":\"status\",\"secondaryMetrics\":[\"brightness\",\"powerConsumption\"],\"chartType\":\"status\",\"unit\":\"on/off\",\"icon\":\"lightbulb\",\"color\":\"#ffd93d\",\"category\":\"Smart Home\"}},\"timestamp\":\"2025-06-08T17:38:38.914Z\"}"
+  }
+]

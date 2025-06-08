@@ -252,8 +252,7 @@ export default function Alerts() {
           alert.title.toLowerCase().includes(searchLower) ||
           alert.message.toLowerCase().includes(searchLower) ||
           alert.deviceId.toLowerCase().includes(searchLower) ||
-          device?.name?.toLowerCase().includes(searchLower) ||
-          alert.condition?.toLowerCase().includes(searchLower)
+          device?.name?.toLowerCase().includes(searchLower)
         );
       }
 
