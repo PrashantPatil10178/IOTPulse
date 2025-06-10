@@ -148,8 +148,8 @@ open http://localhost:8080
 
 ### 📡 Data Publishing Methods
 
-#### MQTT Protocol
-<img src="https://your-domain.com/images/mqtt-setup.png" alt="MQTT Configuration" width="300" align="right"/>
+#### MQTT/HTTP Protocol
+<img src="protocol.png" alt="MQTT Configuration" width="500" align="right"/>
 
 ```javascript
 const mqtt = require('mqtt');
@@ -190,7 +190,7 @@ fetch('https://api.iotpulse.example.com/v1/data', {
 
 ### 🔑 Authentication
 
-<img src="https://your-domain.com/images/api-auth.png" alt="API Authentication Flow" width="400" align="right"/>
+<img src="protocol.png" alt="API Authentication Flow" width="600" align="right"/>
 
 Generate API keys from your dashboard's "API" section:
 
@@ -209,10 +209,7 @@ const response = await fetch('/api/v1/devices/123/data?limit=100', {
 const data = await response.json();
 ```
 
-<div align="center">
-  <img src="https://your-domain.com/images/api-response.png" alt="API Response Example" width="600"/>
-  <p><em>Example API response showing device telemetry data</em></p>
-</div>
+
 
 ## 🛠️ Development
 
