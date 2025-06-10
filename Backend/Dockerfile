@@ -1,20 +1,35 @@
-# 1. Use an official Node.js runtime as the base image
 FROM node:18-alpine
 
-# 2. Set the working directory inside the container
-WORKDIR /usr/src/app
+# Install pnpm
+RUN npm install -g pnpm
 
-# 3. Copy package.json and package-lock.json
+# Create app directory
+WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
+COPY pnpm-lock.yaml* ./
 
-# 4. Install dependencies
-RUN npm install
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
-# 5. Copy the rest of the application code
+# Copy source code
 COPY . .
 
-# 6. Expose the port the app runs on
-EXPOSE 3000
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
 
-# 7. Define the command to run the app
-CMD ["node", "index.js"]
+# Change ownership of the app directory
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node healthcheck.js
+
+# Start the application
+CMD ["pnpm", "start"]

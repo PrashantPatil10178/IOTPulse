@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
 
-      const { data } = await api.post<AuthResponse>("/auth/register", {
+      const { data } = await api.post<AuthResponse>("auth/register", {
         email,
         password,
         fullName,
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (role === "admin") {
         await login("admin@cdac.in", "admin123");
       } else {
-        await login("nikhilanilpatil78@gmail.com", "Prashant$178");
+        await login("patilanilprashant178@gmail.com", "Prashant$178");
       }
     },
     [login]

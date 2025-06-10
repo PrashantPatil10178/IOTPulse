@@ -1,106 +1,107 @@
 ---
-- name: Deploy Node.js backend app with Caddy reverse proxy
-  hosts: webserver
+- name: Setup Demo PostgreSQL Database on Ubuntu
+  hosts: postgres_vm
   become: true
   vars:
-    domain: iot.webfuze.in
-    app_dir: /home/ubuntu/backend
-    node_version: "18.x"
-    user: ubuntu
-    app_port: 3001
+    postgres_version: 15
+    postgres_service_name: postgresql
+    demo_db_name: demo_db
+    demo_db_user: demo_user
+    demo_db_password: demo_pass
+    postgres_port: 5432
+    allow_ip_cidr: "0.0.0.0/0" # Change to your laptop IP/CIDR for security
 
   tasks:
-    - name: Install dependencies
+    - name: Update APT cache
       apt:
-        name: rsync
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install required packages for adding repository
+      apt:
+        name:
+          - wget
+          - ca-certificates
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Add PostgreSQL APT repository key
+      apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
         state: present
 
-    - name: Install PM2 globally
-      npm:
-        name: pm2
-        global: true
+    - name: Add PostgreSQL APT repository
+      apt_repository:
+        repo: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+        state: present
+        filename: "pgdg.list"
 
-    - name: Ensure app directory exists
-      file:
-        path: "{{ app_dir }}"
-        state: directory
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0755"
-
-    - name: Remove old app contents
-      file:
-        path: "{{ app_dir }}"
-        state: absent
-      when: app_dir != "/"
-
-    - name: Recreate app directory
-      file:
-        path: "{{ app_dir }}"
-        state: directory
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0755"
-
-    - name: Copy backend app to server (excluding node_modules and dotfiles)
-      synchronize:
-        src: ./
-        dest: "{{ app_dir }}"
-        rsync_opts:
-          - "--exclude=node_modules"
-          - "--exclude=.git"
-          - "--exclude=.gitignore"
-
-    - name: Copy environment file
-      copy:
-        src: .env
-        dest: "{{ app_dir }}/.env"
-        owner: "{{ user }}"
-        group: "{{ user }}"
-        mode: "0600"
-
-    - name: Install app dependencies
-      shell: pnpm install
-      args:
-        chdir: "{{ app_dir }}"
-
-    - name: Restart backend app with PM2
-      shell: |
-        pm2 delete "backend-app" || true
-        pm2 start npm --name "backend-app" -- start
-        pm2 save
-      args:
-        chdir: "{{ app_dir }}"
-
-    - name: Generate PM2 startup script
-      shell: |
-        export PATH=$PATH:/usr/local/bin
-        pm2 startup systemd -u {{ user }} --hp /home/{{ user }}
-      register: pm2_startup
-      become: true
-
-    - name: Ensure Caddy is installed
+    - name: Update APT cache after adding PostgreSQL repo
       apt:
-        name: caddy
+        update_cache: yes
+
+    - name: Install PostgreSQL and contrib package
+      apt:
+        name:
+          - "postgresql-{{ postgres_version }}"
+          - "postgresql-contrib-{{ postgres_version }}"
         state: present
 
-    - name: Configure Caddy reverse proxy
-      copy:
-        dest: /etc/caddy/Caddyfile
-        content: |
-          {{ domain }} {
-              reverse_proxy localhost:{{ app_port }}
-          }
-      notify: Reload Caddy
-
-    - name: Ensure Caddy service is running and enabled
+    - name: Ensure PostgreSQL is started and enabled
       service:
-        name: caddy
+        name: "{{ postgres_service_name }}"
         state: started
-        enabled: true
+        enabled: yes
+
+    # Use psql shell to avoid Ansible tmpfile bug
+
+    # - name: Create demo database
+    #   become: true
+    #   become_user: postgres
+    #   become_method: su
+    #   shell: |
+    #     psql -lqt | cut -d \| -f 1 | grep -qw {{ demo_db_name }} || \
+    #     createdb -O {{ demo_db_user }} {{ demo_db_name }}
+    #   args:
+    #     executable: /bin/bash
+
+    # - name: Configure listen_addresses in postgresql.conf
+    #   lineinfile:
+    #     path: "/etc/postgresql/{{ postgres_version }}/main/postgresql.conf"
+    #     regexp: "^#?listen_addresses\\s*="
+    #     line: "listen_addresses = '*'"
+    #     notify: Restart PostgreSQL
+
+    # - name: Allow remote connections in pg_hba.conf
+    #   lineinfile:
+    #     path: "/etc/postgresql/{{ postgres_version }}/main/pg_hba.conf"
+    #     insertafter: "^# IPv4 local connections:"
+    #     line: "host    all             all             {{ allow_ip_cidr }}               md5"
+    #     notify: Restart PostgreSQL
+
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow PostgreSQL port in UFW
+      ufw:
+        rule: allow
+        port: "{{ postgres_port }}"
+        proto: tcp
+
+    - name: Enable UFW (if not already enabled)
+      ufw:
+        state: enabled
+      when: ansible_facts.ansible_local.ufw_enabled is not defined
+
+    - name: Log database URL
+      debug:
+        msg: "postgresql://{{ demo_db_user }}:{{ demo_db_password }}@{{ inventory_hostname }}:{{ postgres_port }}/{{ demo_db_name }}"
 
   handlers:
-    - name: Reload Caddy
+    - name: Restart PostgreSQL
       service:
-        name: caddy
-        state: reloaded
+        name: "{{ postgres_service_name }}"
+        state: restarted

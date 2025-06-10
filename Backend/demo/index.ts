@@ -36,56 +36,57 @@ class IoTSimulator {
     firstCycleLogFile: "first_cycle_results.json",
   };
 
+  // Updated Device Configurations with new IDs
   private readonly devices: DeviceConfig[] = [
     {
-      id: "3a73c501-4fee-4799-8292-492c0f7aafa8",
-      name: "Temperature Sensor",
-      type: "temperature",
-    },
-    {
-      id: "ebdc1691-e39a-4f51-8411-7e4b2f37631d",
-      name: "Humidity Sensor",
-      type: "humidity",
-    },
-    {
-      id: "7d26a781-1e9d-41a0-997a-97bdb403cece",
-      name: "Motion Detector",
-      type: "motion",
-    },
-    {
-      id: "11b11e1c-2191-4ad9-9489-e2a88b271952",
-      name: "Smart Light",
-      type: "light",
-    },
-    {
-      id: "1b4061ed-e013-4982-ba24-fd4f19e55da4",
-      name: "Smart Plug",
-      type: "plug",
-    },
-    {
-      id: "e43ab856-45d2-4c82-a225-68f963f66f91",
+      id: "5b2283e7-de07-46c9-8b37-ef318332e77d",
       name: "Camera",
       type: "camera",
     },
     {
-      id: "f7631d3f-0201-42df-b23c-7b1f4646d924",
+      id: "b12a8cf7-2297-4222-a6d4-6ff36bb2623b",
       name: "Energy Meter",
       type: "energy",
     },
     {
-      id: "073c6775-fbb9-4880-94d6-aa6ff0dcfa22",
-      name: "Water Meter",
-      type: "water",
+      id: "45a86e2c-cd02-4000-960b-68514da1fe5e",
+      name: "Humidity Sensor",
+      type: "humidity",
     },
     {
-      id: "9494f46f-3017-474b-ac8c-bc314f605679",
+      id: "e9c66f1d-77bf-4994-9789-2430f328af83",
+      name: "Motion Detector",
+      type: "motion",
+    },
+    {
+      id: "711e779c-b2ae-488d-ac1a-0d63a90782c9",
+      name: "Pressure Sensor",
+      type: "pressure",
+    },
+    {
+      id: "6d736a5a-5a69-4e34-ac99-5bf5672074fa",
+      name: "Smart Light",
+      type: "light",
+    },
+    {
+      id: "f019f937-68be-4e52-9e63-55ccbfbe4b44",
+      name: "Smart Plug",
+      type: "plug",
+    },
+    {
+      id: "54dcef03-144f-4cc3-a82a-6a2b456a056e",
+      name: "Temperature Sensor",
+      type: "temperature",
+    },
+    {
+      id: "caa72736-6b00-486b-9148-6d8590199f43",
       name: "Vibration Sensor",
       type: "vibration",
     },
     {
-      id: "e3c3ee3a-2263-4122-b142-0fce7f6eae68",
-      name: "Pressure Sensor",
-      type: "pressure",
+      id: "a0d5fdaa-609c-47ed-9ee2-1b27ffbb38dc",
+      name: "Water Meter",
+      type: "water",
     },
   ];
 

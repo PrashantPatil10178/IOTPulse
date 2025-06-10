@@ -36,7 +36,6 @@ export const DEVICE_TYPES = {
   CAMERA: "CAMERA",
   ENERGY_METER: "ENERGY_METER",
   WATER_METER: "WATER_METER",
-  AIR_QUALITY_SENSOR: "AIR_QUALITY_SENSOR",
   OTHER: "OTHER",
 };
 
@@ -170,7 +169,10 @@ export default function AnalyticsDashboard() {
             API: Connected
           </Badge>
           {deviceErrors.length > 0 && (
-            <Badge variant="destructive" className="flex items-center gap-2">
+            <Badge
+              variant="destructive"
+              className=" items-center gap-2 text-white "
+            >
               {deviceErrors.length} Errors
             </Badge>
           )}

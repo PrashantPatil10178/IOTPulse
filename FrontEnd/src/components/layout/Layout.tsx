@@ -314,7 +314,6 @@ export default function Layout({ children, currentPageName }: AppLayoutProps) {
   return (
     <TooltipProvider>
       <div className={cn("flex h-screen overflow-hidden bg-background")}>
-        {/* Sidebar (desktop) */}
         <motion.aside
           className="hidden lg:flex lg:w-64 flex-col bg-card/50 backdrop-blur-sm border-r border-border/50 overflow-y-auto shadow-lg"
           initial={{ x: -64, opacity: 0 }}

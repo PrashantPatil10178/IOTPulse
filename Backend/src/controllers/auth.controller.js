@@ -33,6 +33,7 @@ const changePasswordSchema = z.object({
 export const authController = {
   async register(req, res) {
     try {
+      console.log("Registration request body:", req.body);
       const validatedData = registerSchema.parse(req.body);
       const { email, password, fullName, username } = validatedData;
 

@@ -1,0 +1,66 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: iot-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+    volumes:
+      - ./Backend:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    container_name: iot-frontend
+    restart: unless-stopped
+    environment:
+      - PROD=true
+    volumes:
+      - frontend-build:/app/build
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: iot-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - frontend-build:/var/www/html
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app-network
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  frontend-build:
+  caddy_data:
+  caddy_config:
+
+networks:
+  app-network:
+    driver: bridge

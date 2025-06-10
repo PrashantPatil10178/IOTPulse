@@ -57,7 +57,6 @@ export const setupDeviceHandlers = (io) => {
   });
 
   const emitDeviceStatusUpdate = (userId, deviceId, data) => {
-    // Issue 8: Add validation for required parameters
     if (!userId || !deviceId || !data) {
       console.error("Missing required parameters for device status update");
       return;

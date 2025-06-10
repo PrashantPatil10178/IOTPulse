@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { motion } from "framer-motion";
-import { ArrowUp, ArrowDown, Activity, type LucideIcon } from "lucide-react";
+import { Activity, type LucideIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useAppearance } from "@/context/AppearanceContext";
@@ -29,9 +29,6 @@ export default function MetricCard({
   const { animationsEnabled } = useAppearance();
 
   // Handle the trend display
-  const showTrend = change !== undefined && change !== null;
-  const isPositive = change && change > 0;
-  const isNegative = change && change < 0;
 
   // Format the value if a formatter is provided
   const displayValue = formatter ? formatter(value) : value;
@@ -105,29 +102,6 @@ export default function MetricCard({
               <div className="text-sm text-muted-foreground">{unit}</div>
             )}
           </div>
-
-          {showTrend && (
-            <div className="flex items-center gap-1 mt-1.5">
-              {isPositive ? (
-                <ArrowUp className="w-3.5 h-3.5 text-emerald-500" />
-              ) : isNegative ? (
-                <ArrowDown className="w-3.5 h-3.5 text-red-500" />
-              ) : null}
-
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  isPositive
-                    ? "text-emerald-500"
-                    : isNegative
-                    ? "text-red-500"
-                    : "text-muted-foreground"
-                )}
-              >
-                {Math.abs(change)}% from previous
-              </span>
-            </div>
-          )}
         </CardContent>
       </Card>
     </motion.div>

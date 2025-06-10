@@ -1,20 +1,47 @@
-# 1. Use an official Node.js runtime as the base image
-FROM node:18-alpine
+# Multi-stage build for React frontend
+FROM node:18-alpine as build
 
-# 2. Set the working directory inside the container
-WORKDIR /usr/src/app
+# Install pnpm
+RUN npm install -g pnpm
 
-# 3. Copy package.json and package-lock.json
+# Set working directory
+WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
+COPY pnpm-lock.yaml* ./
 
-# 4. Install dependencies
-RUN npm install
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
-# 5. Copy the rest of the application code
+# Copy source code
 COPY . .
 
-# 6. Expose the port the app runs on
-EXPOSE 3000
+# Set environment variable
+ENV PROD=true
 
-# 7. Define the command to run the app
-CMD ["node", "index.js"]
+# Build the app
+RUN pnpm run build
+
+# Production stage - using nginx to serve static files
+FROM nginx:alpine as production
+
+# Copy built assets from build stage
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Copy custom nginx configuration if needed
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
+
+# Alternative: If you want to serve with a simple static file server
+# FROM node:18-alpine as serve
+# WORKDIR /app
+# COPY --from=build /app/build ./build
+# RUN npm install -g serve
+# EXPOSE 3000
+# CMD ["serve", "-s", "build", "-l", "3000"]
