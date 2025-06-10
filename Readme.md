@@ -1,7 +1,7 @@
 # IoTPulse
 
 <div align="center">
-  <img src="https://your-domain.com/images/iotpulse-logo.png" alt="IoTPulse Logo" width="200"/>
+  <img src="HomePage.png" alt="IoTPulse Logo"  width="200"/>
   
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yourusername/iotpulse/releases)
@@ -17,7 +17,7 @@
 ## 🏠 Dashboard Overview
 
 <div align="center">
-  <img src="https://your-domain.com/images/dashboard-overview.png" alt="IoTPulse Dashboard Overview" width="800"/>
+  <img src="HomePage.png" alt="IoTPulse Dashboard Overview" width="800"/>
   <p><em>Main dashboard showing real-time device monitoring and analytics</em></p>
 </div>
 
