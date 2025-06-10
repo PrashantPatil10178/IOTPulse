@@ -9,7 +9,7 @@
   
   **A unified IoT platform for streamlined device management and data visualization**
   
-  [🚀 Landing Page and dashboard](https://iotpulse.example.com) 
+  [🚀 Landing Page and dashboard]([https://iotpulse.example.com](https://v0-iotpulses-landing-page.vercel.app/)) 
 </div>
 
 ---
@@ -31,12 +31,11 @@ IoTPulse is a unified IoT platform designed for businesses and developers to str
 - [💡 Usage](#-usage)
 - [🔌 API Integration](#-api-integration)
 - [🛠️ Development](#️-development)
-- [📞 Support](#-support)
 
 ## ✨ Features
 
 ### 🔗 Easy Device Onboarding
-<img src="https://your-domain.com/images/device-onboarding.png" alt="Device Onboarding Process" width="400" align="right"/>
+<img src="devicesLoaded.png" alt="Device Onboarding Process" width="400" align="right"/>
 
 Industry-leading process to connect IoT devices using a simple link and token, with customizable template code for quick integration.
 
@@ -48,7 +47,7 @@ Industry-leading process to connect IoT devices using a simple link and token, w
 <br clear="right"/>
 
 ### 📊 Real-Time Data Visualization
-<img src="https://your-domain.com/images/realtime-charts.png" alt="Real-time Charts and Analytics" width="400" align="left"/>
+<img src="historical.png" alt="Real-time Charts and Analytics" width="400" align="left"/>
 
 Live charts for connected and active devices, with comprehensive historical data analysis.
 
@@ -61,7 +60,7 @@ Live charts for connected and active devices, with comprehensive historical data
 
 ### 🎨 Custom Dashboards
 <div align="center">
-  <img src="https://your-domain.com/images/custom-dashboard.png" alt="Custom Dashboard Builder" width="700"/>
+  <img src="historical.png" alt="Custom Dashboard Builder" width="700"/>
   <p><em>Drag-and-drop dashboard builder with 20+ widget types</em></p>
 </div>
 
@@ -72,7 +71,7 @@ Create tailored dashboards for specific use cases with our intuitive dashboard b
 - **Team Collaboration**: Share dashboards with team members
 
 ### 🚨 Smart Alerts & Notifications
-<img src="https://your-domain.com/images/alerts-setup.png" alt="Alert Configuration" width="400" align="right"/>
+<img src="alerts.png" alt="Alert Configuration" width="400" align="right"/>
 
 Set up intelligent alerts for critical events to ensure timely responses.
 
@@ -137,7 +136,7 @@ open http://localhost:8080
 ### 📱 Device Connection Wizard
 
 <div align="center">
-  <img src="https://your-domain.com/images/device-wizard.gif" alt="Device Connection Wizard" width="700"/>
+  <img src="connect1.png" alt="Device Connection Wizard" width="700"/>
   <p><em>Step-by-step device connection process</em></p>
 </div>
 
