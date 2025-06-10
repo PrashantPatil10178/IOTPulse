@@ -9,7 +9,7 @@
   
   **A unified IoT platform for streamlined device management and data visualization**
   
-  [🚀 Landing Page and dashboard]([https://iotpulse.example.com](https://v0-iotpulses-landing-page.vercel.app/)) 
+  [🚀 Landing Page and dashboard]([[https://iotpulse.example.com](https://v0-iotpulses-landing-page.vercel.app/)](https://v0-iotpulses-landing-page.vercel.app/)) 
 </div>
 
 ---
