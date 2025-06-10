@@ -1,7 +1,7 @@
 # IoTPulse
 
 <div align="center">
-  <img src="HomePage.png" alt="IoTPulse Logo"  width="200"/>
+  <img src="logo.png" alt="IoTPulse Logo"  width="200"/>
   
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yourusername/iotpulse/releases)
@@ -9,7 +9,7 @@
   
   **A unified IoT platform for streamlined device management and data visualization**
   
-  [🚀 Landing Page and dashboard](https://iotpulse.example.com) • [📖 Documentation](https://docs.iotpulse.example.com) • [🔧 API Reference](https://api.iotpulse.example.com)
+  [🚀 Landing Page and dashboard](https://iotpulse.example.com) 
 </div>
 
 ---
@@ -23,12 +23,6 @@
 
 IoTPulse is a unified IoT platform designed for businesses and developers to streamline IoT device management, data visualization, and analytics. It addresses the complexity and time-consuming nature of IoT data management and cloud backend development by providing a robust, secure, and customizable dashboard.
 
-### 🎯 Quick Start Demo
-
-<div align="center">
-  <img src="https://your-domain.com/images/quick-start-demo.gif" alt="IoTPulse Quick Start Demo" width="600"/>
-  <p><em>Get started in under 5 minutes - from device connection to data visualization</em></p>
-</div>
 
 ## 📋 Table of Contents
 
@@ -91,7 +85,6 @@ Set up intelligent alerts for critical events to ensure timely responses.
 
 ### 🔐 Enterprise Security
 <div align="center">
-  <img src="https://your-domain.com/images/security-features.png" alt="Security Dashboard" width="600"/>
   <p><em>Bank-grade security with end-to-end encryption and compliance</em></p>
 </div>
 
@@ -101,7 +94,7 @@ Set up intelligent alerts for critical events to ensure timely responses.
 - **Compliance**: SOC 2, GDPR, and HIPAA compliant
 
 ### 🎯 Developer-Friendly APIs
-<img src="https://your-domain.com/images/api-playground.png" alt="API Playground" width="400" align="left"/>
+
 
 Use IoTPulse as a cloud backend to build custom IoT applications with our comprehensive API suite.
 
@@ -117,7 +110,7 @@ Use IoTPulse as a cloud backend to build custom IoT applications with our compre
 ### Prerequisites
 
 <div align="center">
-  <img src="https://your-domain.com/images/tech-stack.png" alt="Technology Stack" width="500"/>
+  
 </div>
 
 - A modern web browser (Chrome, Firefox, Edge, Safari)
@@ -138,14 +131,6 @@ docker-compose up -d
 open http://localhost:8080
 ```
 
-### ☁️ Cloud Deployment
-
-<div align="center">
-  <img src="https://your-domain.com/images/cloud-deployment.png" alt="Cloud Deployment Options" width="600"/>
-  <p><em>Deploy on AWS, Azure, GCP, or use our managed cloud service</em></p>
-</div>
-
-For production deployments, we recommend our managed cloud service or containerized deployment on your preferred cloud provider.
 
 ## 💡 Usage
 
@@ -199,7 +184,6 @@ fetch('https://api.iotpulse.example.com/v1/data', {
 ### 🎨 Dashboard Customization
 
 <div align="center">
-  <img src="https://your-domain.com/images/dashboard-customization.gif" alt="Dashboard Customization" width="800"/>
   <p><em>Customize your dashboard with drag-and-drop widgets</em></p>
 </div>
 
@@ -240,43 +224,5 @@ const data = await response.json();
   <p><em>High-level system architecture and data flow</em></p>
 </div>
 
-### 🔧 Local Development Setup
 
-<img src="https://your-domain.com/images/dev-setup.png" alt="Development Environment" width="400" align="right"/>
 
-```bash
-# Install dependencies
-npm install
-
-# Set up environment
-cp .env.example .env
-nano .env
-
-# Start development server
-npm run dev
-```
-
-### 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-<div align="center">
-  <img src="https://your-domain.com/images/contribution-workflow.png" alt="Contribution Workflow" width="600"/>
-</div>
-
-## 📞 Support
-
-<div align="center">
-  <img src="https://your-domain.com/images/support-channels.png" alt="Support Channels" width="500"/>
-  
-  [💬 Discord Community](https://discord.gg/iotpulse) • [📧 Email Support](mailto:support@iotpulse.com) • [📚 Documentation](https://docs.iotpulse.example.com)
-</div>
-
----
-
-<div align="center">
-  <p>Made with ❤️ by the IoTPulse team</p>
-  
-  [![GitHub stars](https://img.shields.io/github/stars/yourusername/iotpulse.svg?style=social)](https://github.com/yourusername/iotpulse/stargazers)
-  [![Twitter Follow](https://img.shields.io/twitter/follow/iotpulse.svg?style=social)](https://twitter.com/iotpulse)
-</div>
