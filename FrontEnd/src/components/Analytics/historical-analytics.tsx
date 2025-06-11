@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -27,6 +27,9 @@ import {
   Zap,
   Database,
   Layers,
+  Play,
+  Pause,
+  RotateCcw,
 } from "lucide-react";
 import DataChart from "@/components/dashboard/DataChart";
 import { useHistoricalData } from "@/hooks/use-historical-data";
@@ -48,28 +51,118 @@ interface HistoricalAnalyticsProps {
   onTimeRangeChange: (range: string) => void;
 }
 
+interface RealTimeDataPoint {
+  timestamp: string;
+  [key: string]: any;
+}
+
+// Enhanced DeviceStatusIndicator with real-time pulse
+const DeviceStatusIndicator = ({ deviceId }: { deviceId: string }) => {
+  const { connectionStatus, isLiveDataActive, error, lastDataReceived } =
+    useDeviceData(deviceId);
+  const [pulseActive, setPulseActive] = useState(false);
+
+  // Trigger pulse animation when new data arrives
+  useEffect(() => {
+    if (isLiveDataActive && connectionStatus === "RECEIVING_DATA") {
+      setPulseActive(true);
+      const timeout = setTimeout(() => setPulseActive(false), 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [lastDataReceived, isLiveDataActive, connectionStatus]);
+
+  const statusConfig = useMemo(() => {
+    switch (connectionStatus) {
+      case "RECEIVING_DATA":
+        return {
+          color: "text-green-500",
+          bgColor: "bg-green-100 dark:bg-green-900/30",
+          icon: Wifi,
+          label: "Live",
+          animate: true,
+        };
+      case "ERROR":
+        return {
+          color: "text-red-500",
+          bgColor: "bg-red-100 dark:bg-red-900/30",
+          icon: AlertTriangle,
+          label: "Error",
+          animate: false,
+        };
+      case "NOT_CONNECTED":
+        return {
+          color: "text-yellow-500",
+          bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+          icon: WifiOff,
+          label: "Idle",
+          animate: false,
+        };
+      case "DISCONNECTED":
+      default:
+        return {
+          color: "text-gray-500",
+          bgColor: "bg-gray-100 dark:bg-gray-900/30",
+          icon: WifiOff,
+          label: "Offline",
+          animate: false,
+        };
+    }
+  }, [connectionStatus]);
+
+  const IconComponent = statusConfig.icon;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className={`p-1 rounded-full ${statusConfig.bgColor} ${
+          pulseActive ? "ring-2 ring-green-400 ring-opacity-50" : ""
+        }`}
+      >
+        <IconComponent
+          className={`w-3 h-3 ${statusConfig.color} ${
+            statusConfig.animate ? "animate-pulse" : ""
+          } ${
+            pulseActive ? "scale-110 transition-transform duration-300" : ""
+          }`}
+        />
+      </div>
+      <span className={`text-xs font-medium ${statusConfig.color}`}>
+        {statusConfig.label}
+      </span>
+      {error && (
+        <Badge variant="destructive" className="text-xs px-1 py-0">
+          {error.errorType.split("_")[0]}
+        </Badge>
+      )}
+    </div>
+  );
+};
+
 export default function HistoricalAnalytics({
   devices,
   username,
   timeRange,
   onTimeRangeChange,
 }: HistoricalAnalyticsProps) {
+  // State management
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [dataLimit, setDataLimit] = useState("100");
   const [chartType, setChartType] = useState<"line" | "area" | "bar">("area");
   const [dataMode, setDataMode] = useState<
     "combined" | "historical" | "realtime"
   >("combined");
+  const [isRealTimeEnabled, setIsRealTimeEnabled] = useState(true);
+  const [chartData, setChartData] = useState<RealTimeDataPoint[]>([]);
+  const [lastUpdateTime, setLastUpdateTime] = useState<string>("");
+
+  // Refs for real-time data management
+  const dataUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const chartUpdateCountRef = useRef(0);
+  const lastSocketDataRef = useRef<any>(null);
 
   // Socket context hooks
-  const {
-    isConnected,
-    getReceivingDataDevices,
-    subscribeToAllDevices,
-    forceDataSync,
-  } = useSocket();
-
-  const { stats, deviceErrors, activeDevicesCount } = useDeviceStats();
+  const { isConnected, subscribeToAllDevices, forceDataSync } = useSocket();
+  const { stats, activeDevicesCount } = useDeviceStats();
 
   // Get real-time data for selected device
   const {
@@ -86,244 +179,250 @@ export default function HistoricalAnalytics({
   // Historical data hook
   const {
     historicalData,
+    deviceInfo,
+    dataStructures,
     isLoading: isLoadingHistorical,
     error: historicalError,
     fetchHistoricalData,
     refreshHistoricalData,
-    getLatestHistoricalPoint,
+    getDataStats,
     mergeWithRealtimeData,
-    clearHistoricalData,
   } = useHistoricalData(username);
 
-  // Subscribe to all devices on mount
+  // Memoized device list
+  const deviceList = useMemo(() => devices, [devices]);
+
+  // Memoized selected device object
+  const selectedDeviceObj = useMemo(
+    () => deviceList.find((d) => d.id === selectedDevice),
+    [deviceList, selectedDevice]
+  );
+
+  // Enhanced data transformation function
+  const transformSocketDataToChartFormat = useCallback(
+    (socketData: any): RealTimeDataPoint | null => {
+      if (!socketData || !socketData.timestamp) return null;
+
+      const chartPoint: RealTimeDataPoint = {
+        timestamp: socketData.timestamp,
+      };
+
+      // Extract primary metric
+      if (socketData.data?.metrics?.primary) {
+        const primaryMetric = socketData.data.metrics.primary;
+        chartPoint[primaryMetric.name || "Primary"] = primaryMetric.value || 0;
+      }
+
+      // Extract secondary metrics
+      if (
+        socketData.data?.metrics?.secondary &&
+        Array.isArray(socketData.data.metrics.secondary)
+      ) {
+        socketData.data.metrics.secondary.forEach((metric: any) => {
+          if (metric.name && metric.value !== undefined) {
+            chartPoint[metric.name] = metric.value;
+          }
+        });
+      }
+
+      // Fallback for simple value structure
+      if (socketData.value !== undefined && !socketData.data?.metrics) {
+        chartPoint["Value"] = socketData.value;
+      }
+
+      return chartPoint;
+    },
+    []
+  );
+
+  // Enhanced data merging with sliding window
+  const mergeDataWithSlidingWindow = useCallback(
+    (
+      historical: RealTimeDataPoint[],
+      realtime: any,
+      maxPoints: number = 100
+    ): RealTimeDataPoint[] => {
+      let combined = [...historical];
+
+      // Add real-time data if available
+      if (realtime && hasRealtimeData) {
+        const realtimePoint = transformSocketDataToChartFormat(realtime);
+        if (realtimePoint) {
+          // Check if this is new data (different timestamp)
+          const lastPoint = combined[combined.length - 1];
+          if (!lastPoint || lastPoint.timestamp !== realtimePoint.timestamp) {
+            combined.push(realtimePoint);
+          } else {
+            // Update existing point with latest data
+            combined[combined.length - 1] = { ...lastPoint, ...realtimePoint };
+          }
+        }
+      }
+
+      // Implement sliding window - keep only the latest N points
+      if (combined.length > maxPoints) {
+        combined = combined.slice(-maxPoints);
+      }
+
+      // Sort by timestamp to ensure proper ordering
+      combined.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      return combined;
+    },
+    [hasRealtimeData, transformSocketDataToChartFormat]
+  );
+
+  // Real-time data update effect
   useEffect(() => {
-    if (devices.length > 0 && isConnected) {
-      const deviceIds = devices.map((d) => d.id);
+    if (!selectedDevice || !isRealTimeEnabled) return;
+
+    // Clear existing interval
+    if (dataUpdateIntervalRef.current) {
+      clearInterval(dataUpdateIntervalRef.current);
+    }
+
+    // Set up real-time data updates
+    dataUpdateIntervalRef.current = setInterval(() => {
+      const historical = historicalData[selectedDevice] || [];
+
+      // Check if socket data has changed
+      const currentSocketData = realtimeData;
+      const hasNewSocketData =
+        JSON.stringify(currentSocketData) !==
+        JSON.stringify(lastSocketDataRef.current);
+
+      if (hasNewSocketData || chartUpdateCountRef.current === 0) {
+        lastSocketDataRef.current = currentSocketData;
+
+        const newChartData = (() => {
+          switch (dataMode) {
+            case "historical":
+              return historical;
+            case "realtime":
+              if (currentSocketData) {
+                const realtimePoint =
+                  transformSocketDataToChartFormat(currentSocketData);
+                return realtimePoint ? [realtimePoint] : [];
+              }
+              return [];
+            case "combined":
+            default:
+              return mergeDataWithSlidingWindow(
+                historical,
+                currentSocketData,
+                Number.parseInt(dataLimit, 10)
+              );
+          }
+        })();
+
+        // Only update if data has actually changed
+        if (JSON.stringify(newChartData) !== JSON.stringify(chartData)) {
+          setChartData(newChartData);
+          setLastUpdateTime(new Date().toISOString());
+          chartUpdateCountRef.current++;
+
+          console.log(
+            `📊 Chart updated (${chartUpdateCountRef.current}): ${newChartData.length} points`
+          );
+        }
+      }
+    }, 1000); // Update every second for responsive UI
+
+    return () => {
+      if (dataUpdateIntervalRef.current) {
+        clearInterval(dataUpdateIntervalRef.current);
+      }
+    };
+  }, [
+    selectedDevice,
+    realtimeData,
+    historicalData,
+    dataMode,
+    dataLimit,
+    isRealTimeEnabled,
+    chartData,
+    mergeDataWithSlidingWindow,
+    transformSocketDataToChartFormat,
+  ]);
+
+  // Subscribe to devices on mount
+  useEffect(() => {
+    if (deviceList.length > 0 && isConnected) {
+      const deviceIds = deviceList.map((d) => d.id);
       subscribeToAllDevices(deviceIds);
       console.log(
         `🔌 Subscribed to ${deviceIds.length} devices for real-time data`
       );
     }
-  }, [devices, isConnected, subscribeToAllDevices]);
+  }, [deviceList, isConnected, subscribeToAllDevices]);
 
-  // Set first device as default when devices load
+  // Set first device as default
   useEffect(() => {
-    if (devices.length > 0 && !selectedDevice) {
-      setSelectedDevice(devices[0].id);
-      console.log(`📱 Auto-selected device: ${devices[0].id}`);
+    if (deviceList.length > 0 && !selectedDevice) {
+      const firstDevice = deviceList[0];
+      setSelectedDevice(firstDevice.id);
+      console.log(`📱 Auto-selected device: ${firstDevice.id}`);
     }
-  }, [devices, selectedDevice]);
+  }, [deviceList, selectedDevice]);
 
-  // Fetch historical data for selected device
+  // Fetch historical data when device/limit changes
   useEffect(() => {
     if (
       selectedDevice &&
       (dataMode === "combined" || dataMode === "historical")
     ) {
       console.log(`📊 Fetching historical data for device: ${selectedDevice}`);
-      fetchHistoricalData(
-        selectedDevice,
-        Number.parseInt(dataLimit),
-        timeRange
-      );
+      fetchHistoricalData(selectedDevice, Number.parseInt(dataLimit, 10));
     }
-  }, [selectedDevice, dataLimit, timeRange, fetchHistoricalData, dataMode]);
+  }, [selectedDevice, dataLimit, fetchHistoricalData, dataMode]);
 
-  // Real-time Device Status Indicator Component
-  const DeviceStatusIndicator = ({ deviceId }: { deviceId: string }) => {
-    const { connectionStatus, isLiveDataActive, error } =
-      useDeviceData(deviceId);
+  // Reset chart update counter when device changes
+  useEffect(() => {
+    chartUpdateCountRef.current = 0;
+    lastSocketDataRef.current = null;
+  }, [selectedDevice]);
 
-    const getStatusConfig = () => {
-      switch (connectionStatus) {
-        case "RECEIVING_DATA":
-          return {
-            color: "text-green-500",
-            bgColor: "bg-green-100 dark:bg-green-900/30",
-            icon: Wifi,
-            label: "Live",
-            animate: true,
-          };
-        case "ERROR":
-          return {
-            color: "text-red-500",
-            bgColor: "bg-red-100 dark:bg-red-900/30",
-            icon: AlertTriangle,
-            label: "Error",
-            animate: false,
-          };
-        case "NOT_CONNECTED":
-          return {
-            color: "text-yellow-500",
-            bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
-            icon: WifiOff,
-            label: "Idle",
-            animate: false,
-          };
-        case "DISCONNECTED":
-        default:
-          return {
-            color: "text-gray-500",
-            bgColor: "bg-gray-100 dark:bg-gray-900/30",
-            icon: WifiOff,
-            label: "Offline",
-            animate: false,
-          };
-      }
-    };
-
-    const config = getStatusConfig();
-    const IconComponent = config.icon;
-
-    return (
-      <div className="flex items-center gap-2">
-        <div className={`p-1 rounded-full ${config.bgColor}`}>
-          <IconComponent
-            className={`w-3 h-3 ${config.color} ${
-              config.animate ? "animate-pulse" : ""
-            }`}
-          />
-        </div>
-        <span className={`text-xs font-medium ${config.color}`}>
-          {config.label}
-        </span>
-        {error && (
-          <Badge variant="destructive" className="text-xs px-1 py-0">
-            {error.errorType.split("_")[0]}
-          </Badge>
-        )}
-      </div>
-    );
-  };
-
-  // Enhanced Device Selection Component
-  const EnhancedDeviceSelect = () => (
-    <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-      <SelectTrigger className="w-64 transition-all duration-200 hover:shadow-sm">
-        <SelectValue placeholder="Select Device" />
-      </SelectTrigger>
-      <SelectContent>
-        {devices.map((device) => {
-          const IconComponent = getDeviceIcon(device.type);
-          return (
-            <SelectItem key={device.id} value={device.id}>
-              <div className="flex items-center justify-between w-full gap-3">
-                <div className="flex items-center gap-2">
-                  <IconComponent className="w-4 h-4" />
-                  <div>
-                    <div className="font-medium">{device.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {device.type.replace(/_/g, " ").toLowerCase()}
+  // Enhanced Device Select Component
+  const EnhancedDeviceSelect = useMemo(
+    () => (
+      <Select value={selectedDevice} onValueChange={setSelectedDevice}>
+        <SelectTrigger className="w-64 transition-all duration-200 hover:shadow-sm">
+          <SelectValue placeholder="Select Device" />
+        </SelectTrigger>
+        <SelectContent>
+          {deviceList.map((device) => {
+            const IconComponent = getDeviceIcon(device.type);
+            return (
+              <SelectItem key={device.id} value={device.id}>
+                <div className="flex items-center justify-between w-full gap-3">
+                  <div className="flex items-center gap-2">
+                    <IconComponent className="w-4 h-4" />
+                    <div>
+                      <div className="font-medium">{device.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {device.type.replace(/_/g, " ").toLowerCase()}
+                      </div>
                     </div>
                   </div>
+                  <DeviceStatusIndicator deviceId={device.id} />
                 </div>
-                <DeviceStatusIndicator deviceId={device.id} />
-              </div>
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+    ),
+    [deviceList, selectedDevice]
   );
 
-  // Get analytics data based on selected mode
-  const getAnalyticsData = useCallback(() => {
-    if (!selectedDevice) return [];
+  // Enhanced statistics calculation
+  const statistics = useMemo(() => {
+    if (chartData.length < 1) return null;
 
-    const historical = historicalData[selectedDevice] || [];
-
-    switch (dataMode) {
-      case "historical":
-        console.log(
-          `📊 Using historical data only: ${historical.length} points`
-        );
-        return historical.map((point) => ({
-          timestamp: point.timestamp,
-          [point.data?.metrics?.primary?.name || "Primary"]:
-            point.data?.metrics?.primary?.value || 0,
-          // Add secondary metrics
-          ...(point.data?.metrics?.secondary || []).reduce(
-            (acc: any, metric: any) => {
-              if (metric.name && metric.value !== undefined) {
-                acc[metric.name] = metric.value;
-              }
-              return acc;
-            },
-            {}
-          ),
-        }));
-
-      case "realtime":
-        console.log(`🔴 Using real-time data only`);
-        if (realtimeData && hasRealtimeData) {
-          const realtimePoint = {
-            timestamp: realtimeData.timestamp,
-            [realtimeData.data?.metrics?.primary?.name || "Primary"]:
-              realtimeData.data?.metrics?.primary?.value || 0,
-          };
-          // Add secondary metrics
-          if (
-            realtimeData.data?.metrics?.secondary &&
-            Array.isArray(realtimeData.data.metrics.secondary)
-          ) {
-            realtimeData.data.metrics.secondary.forEach((metric: any) => {
-              if (metric.name && metric.value !== undefined) {
-                realtimePoint[metric.name] = metric.value;
-              }
-            });
-          }
-          return [realtimePoint];
-        }
-        return [];
-
-      case "combined":
-      default:
-        console.log(
-          `🔗 Using combined data: ${historical.length} historical + ${
-            hasRealtimeData ? 1 : 0
-          } real-time`
-        );
-        const merged = mergeWithRealtimeData(selectedDevice, realtimeData);
-        return merged.map((point) => ({
-          timestamp: point.timestamp,
-          [point.data?.metrics?.primary?.name || "Primary"]:
-            point.data?.metrics?.primary?.value || 0,
-          // Add secondary metrics
-          ...(point.data?.metrics?.secondary || []).reduce(
-            (acc: any, metric: any) => {
-              if (metric.name && metric.value !== undefined) {
-                acc[metric.name] = metric.value;
-              }
-              return acc;
-            },
-            {}
-          ),
-        }));
-    }
-  }, [
-    selectedDevice,
-    historicalData,
-    realtimeData,
-    hasRealtimeData,
-    dataMode,
-    mergeWithRealtimeData,
-  ]);
-
-  const analyticsData = getAnalyticsData();
-  const selectedDeviceObj = devices.find((d) => d.id === selectedDevice);
-
-  // Get chart colors based on selected device
-  const getChartColors = () => {
-    if (!selectedDeviceObj) return ["#3B82F6"];
-    const deviceGradient = getDeviceGradient(selectedDeviceObj.type);
-    return deviceGradient;
-  };
-
-  // Calculate enhanced statistics
-  const getEnhancedStatistics = () => {
-    if (analyticsData.length < 1) return null;
-
-    const values = analyticsData
+    const values = chartData
       .map((d) => {
         const numericValues = Object.values(d).filter(
           (v) => typeof v === "number"
@@ -339,7 +438,7 @@ export default function HistoricalAnalytics({
     const change = latest - previous;
     const changePercent = previous !== 0 ? (change / previous) * 100 : 0;
 
-    const latestHistorical = getLatestHistoricalPoint(selectedDevice);
+    const dataStats = getDataStats(selectedDevice);
 
     return {
       latest,
@@ -348,54 +447,105 @@ export default function HistoricalAnalytics({
       min: Math.min(...values),
       max: Math.max(...values),
       avg: values.reduce((sum, v) => sum + v, 0) / values.length,
-      dataPoints: analyticsData.length,
+      dataPoints: chartData.length,
       historicalPoints: historicalData[selectedDevice]?.length || 0,
       hasRealtime: hasRealtimeData,
       hasHistorical: (historicalData[selectedDevice]?.length || 0) > 0,
-      lastHistoricalUpdate: latestHistorical?.timestamp,
+      lastHistoricalUpdate: dataStats.lastUpdate,
       lastRealtimeUpdate: realtimeData?.timestamp,
       dataMode,
+      deviceInfo: dataStats.deviceInfo,
+      dataStructure: dataStats.dataStructure,
+      updateCount: chartUpdateCountRef.current,
+      lastChartUpdate: lastUpdateTime,
     };
-  };
+  }, [
+    chartData,
+    historicalData,
+    selectedDevice,
+    hasRealtimeData,
+    realtimeData,
+    getDataStats,
+    dataMode,
+    lastUpdateTime,
+  ]);
 
-  const statistics = getEnhancedStatistics();
-
-  // Get metric names for legend
-  const getMetricNames = () => {
-    if (analyticsData.length === 0) return [];
-    const sampleData = analyticsData[0];
+  // Metric names extraction
+  const metricNames = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const sampleData = chartData[0];
     return Object.keys(sampleData).filter((key) => key !== "timestamp");
-  };
+  }, [chartData]);
 
-  const metricNames = getMetricNames();
+  // Chart colors computation
+  const chartColors = useMemo(() => {
+    if (!selectedDeviceObj) return ["#3B82F6"];
 
-  // Force sync and refresh handlers
-  const handleForceSync = async () => {
-    if (selectedDevice) {
+    const dataStructure = dataStructures[selectedDevice];
+    if (dataStructure?.color) {
+      return [
+        dataStructure.color,
+        `${dataStructure.color}80`,
+        `${dataStructure.color}60`,
+      ];
+    }
+
+    return getDeviceGradient(selectedDeviceObj.type);
+  }, [selectedDeviceObj, selectedDevice, dataStructures]);
+
+  // Sync handlers
+  const handleForceSync = useCallback(async () => {
+    if (!selectedDevice) return;
+    try {
       console.log(`🔄 Force syncing device: ${selectedDevice}`);
       await forceSync();
+    } catch (error) {
+      console.error(`❌ Failed to sync device ${selectedDevice}:`, error);
     }
-  };
+  }, [selectedDevice, forceSync]);
 
-  const handleRefreshHistorical = async () => {
-    if (selectedDevice) {
+  const handleRefreshHistorical = useCallback(async () => {
+    if (!selectedDevice) return;
+    try {
       console.log(
         `🔄 Refreshing historical data for device: ${selectedDevice}`
       );
       await refreshHistoricalData(selectedDevice);
+    } catch (error) {
+      console.error(
+        `❌ Failed to refresh historical data for ${selectedDevice}:`,
+        error
+      );
     }
-  };
+  }, [selectedDevice, refreshHistoricalData]);
 
-  const handleRefreshAll = async () => {
-    if (selectedDevice) {
-      console.log(`🔄 Refreshing all data for device: ${selectedDevice}`);
-      await Promise.all([forceSync(), refreshHistoricalData(selectedDevice)]);
-    }
-  };
+  const handleToggleRealTime = useCallback(() => {
+    setIsRealTimeEnabled(!isRealTimeEnabled);
+    console.log(
+      `🔄 Real-time updates ${!isRealTimeEnabled ? "enabled" : "disabled"}`
+    );
+  }, [isRealTimeEnabled]);
+
+  const handleResetChart = useCallback(() => {
+    chartUpdateCountRef.current = 0;
+    lastSocketDataRef.current = null;
+    setChartData([]);
+    console.log("🔄 Chart data reset");
+  }, []);
+
+  // Device icon and color
+  const selectedDeviceIcon = useMemo(() => {
+    if (!selectedDeviceObj) return null;
+    const IconComponent = getDeviceIcon(selectedDeviceObj.type);
+    const dataStructure = dataStructures[selectedDevice];
+    const deviceColor =
+      dataStructure?.color || getDeviceColor(selectedDeviceObj.type);
+    return { IconComponent, deviceColor };
+  }, [selectedDeviceObj, selectedDevice, dataStructures]);
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header Card */}
+      {/* Enhanced Header Card with Real-time Controls */}
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
         <CardHeader className="pb-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -404,11 +554,16 @@ export default function HistoricalAnalytics({
                 <History className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-xl text-blue-900 dark:text-blue-100">
-                  Historical Analytics
+                <CardTitle className="text-xl text-blue-900 dark:text-blue-100 flex items-center gap-2">
+                  Real-time Historical Analytics
+                  {isRealTimeEnabled && (
+                    <Badge variant="default" className="text-xs animate-pulse">
+                      LIVE
+                    </Badge>
+                  )}
                 </CardTitle>
                 <div className="flex items-center gap-4 text-sm text-blue-600 dark:text-blue-300">
-                  <span>Database + Real-time Analytics</span>
+                  <span>Database + Socket Integration</span>
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-2 h-2 rounded-full ${
@@ -422,9 +577,9 @@ export default function HistoricalAnalytics({
                   <span>
                     {activeDevicesCount} of {stats.totalDevices} devices active
                   </span>
-                  {stats.errorDevices > 0 && (
-                    <Badge variant="destructive" className="text-xs">
-                      {stats.errorDevices} errors
+                  {statistics?.updateCount && (
+                    <Badge variant="outline" className="text-xs">
+                      Updates: {statistics.updateCount}
                     </Badge>
                   )}
                 </div>
@@ -435,7 +590,34 @@ export default function HistoricalAnalytics({
               {/* Device Selection */}
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-muted-foreground" />
-                <EnhancedDeviceSelect />
+                {EnhancedDeviceSelect}
+              </div>
+
+              {/* Real-time Control */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={isRealTimeEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleToggleRealTime}
+                  className="flex items-center gap-2"
+                >
+                  {isRealTimeEnabled ? (
+                    <Pause className="w-4 h-4" />
+                  ) : (
+                    <Play className="w-4 h-4" />
+                  )}
+                  {isRealTimeEnabled ? "Pause Live" : "Start Live"}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetChart}
+                  className="flex items-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset
+                </Button>
               </div>
 
               {/* Data Mode Selection */}
@@ -469,24 +651,6 @@ export default function HistoricalAnalytics({
                         Real-time
                       </div>
                     </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Time Range Selection */}
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <Select value={timeRange} onValueChange={onTimeRangeChange}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1h">1 Hour</SelectItem>
-                    <SelectItem value="6h">6 Hours</SelectItem>
-                    <SelectItem value="12h">12 Hours</SelectItem>
-                    <SelectItem value="24h">24 Hours</SelectItem>
-                    <SelectItem value="7d">7 Days</SelectItem>
-                    <SelectItem value="30d">30 Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -526,7 +690,7 @@ export default function HistoricalAnalytics({
                 </Select>
               </div>
 
-              {/* Data Limit Selection (only for historical data) */}
+              {/* Data Limit Selection */}
               {(dataMode === "combined" || dataMode === "historical") && (
                 <Select value={dataLimit} onValueChange={setDataLimit}>
                   <SelectTrigger className="w-32">
@@ -537,7 +701,6 @@ export default function HistoricalAnalytics({
                     <SelectItem value="100">100 Points</SelectItem>
                     <SelectItem value="200">200 Points</SelectItem>
                     <SelectItem value="500">500 Points</SelectItem>
-                    <SelectItem value="1000">1000 Points</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -572,21 +735,6 @@ export default function HistoricalAnalytics({
                     />
                     DB
                   </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRefreshAll}
-                    disabled={isSyncing || isLoadingHistorical}
-                    className="flex items-center gap-2"
-                  >
-                    <RefreshCw
-                      className={`w-4 h-4 ${
-                        isSyncing || isLoadingHistorical ? "animate-spin" : ""
-                      }`}
-                    />
-                    All
-                  </Button>
                 </div>
               )}
             </div>
@@ -594,44 +742,9 @@ export default function HistoricalAnalytics({
         </CardHeader>
       </Card>
 
-      {/* Error Alerts */}
-      {(deviceError || historicalError) && (
-        <div className="space-y-2">
-          {deviceError && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>
-                  Socket Error - Device {selectedDevice}: {deviceError.message}
-                </span>
-                <Button variant="outline" size="sm" onClick={handleForceSync}>
-                  Retry Socket
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {historicalError && (
-            <Alert variant="destructive">
-              <Database className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>Database Error: {historicalError}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefreshHistorical}
-                >
-                  Retry DB
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      )}
-
-      {/* Data Source Status Cards */}
+      {/* Real-time Status Cards */}
       {selectedDevice && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Real-time Data Status */}
           <Card
             className={`border-l-4 ${
@@ -654,6 +767,9 @@ export default function HistoricalAnalytics({
                     >
                       {isLiveDataActive ? "Live" : "Cached"}
                     </Badge>
+                    {isRealTimeEnabled && hasRealtimeData && (
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     Status:{" "}
@@ -736,6 +852,83 @@ export default function HistoricalAnalytics({
               </div>
             </CardContent>
           </Card>
+
+          {/* Chart Update Status */}
+          <Card className="border-l-4 border-l-purple-500">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity className="w-4 h-4 text-purple-500" />
+                    <h4 className="font-medium">Chart Updates</h4>
+                    {isRealTimeEnabled && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs animate-pulse"
+                      >
+                        Live Mode
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Updates:{" "}
+                    <span className="font-medium">
+                      {statistics?.updateCount || 0}
+                    </span>
+                  </p>
+                  {statistics?.lastChartUpdate && (
+                    <p className="text-xs text-muted-foreground">
+                      Last:{" "}
+                      {new Date(
+                        statistics.lastChartUpdate
+                      ).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-purple-600">
+                    {chartData.length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Points</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Error Alerts */}
+      {(deviceError || historicalError) && (
+        <div className="space-y-2">
+          {deviceError && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  Socket Error - Device {selectedDevice}: {deviceError.message}
+                </span>
+                <Button variant="outline" size="sm" onClick={handleForceSync}>
+                  Retry Socket
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {historicalError && (
+            <Alert variant="destructive">
+              <Database className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>Database Error: {historicalError}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefreshHistorical}
+                >
+                  Retry DB
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       )}
 
@@ -750,9 +943,19 @@ export default function HistoricalAnalytics({
                   <p className="text-2xl font-bold text-blue-600">
                     {statistics.latest.toFixed(2)}
                   </p>
-                  <Badge variant="outline" className="text-xs mt-1">
-                    {statistics.dataMode}
-                  </Badge>
+                  <div className="flex gap-1 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {statistics.dataMode}
+                    </Badge>
+                    {isRealTimeEnabled && hasRealtimeData && (
+                      <Badge
+                        variant="default"
+                        className="text-xs animate-pulse"
+                      >
+                        LIVE
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-full">
                   <TrendingUp className="w-6 h-6 text-blue-500" />
@@ -824,6 +1027,9 @@ export default function HistoricalAnalytics({
                       Live: 1
                     </Badge>
                   )}
+                  <Badge variant="outline" className="text-xs">
+                    Updates: {statistics.updateCount}
+                  </Badge>
                 </div>
               </div>
             </CardContent>
@@ -831,72 +1037,42 @@ export default function HistoricalAnalytics({
         </div>
       )}
 
-      {/* Metrics Legend */}
-      {selectedDevice && metricNames.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Metrics Legend
-              <Badge variant="outline" className="text-xs">
-                {dataMode} mode
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-3">
-              {metricNames.map((metric, index) => {
-                const colors = getChartColors();
-                const color = colors[Math.min(index, colors.length - 1)];
-                return (
-                  <div
-                    key={metric}
-                    className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 transition-all duration-200 hover:scale-105"
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-sm font-medium capitalize">
-                      {metric.replace(/_/g, " ")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Enhanced Main Chart */}
+      {/* Enhanced Main Chart with Real-time Indicators */}
       {selectedDeviceObj && (
         <Card className="overflow-hidden">
           <CardHeader className="pb-4 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {(() => {
-                  const IconComponent = getDeviceIcon(selectedDeviceObj.type);
-                  const deviceColor = getDeviceColor(selectedDeviceObj.type);
-                  return (
-                    <div
-                      className="p-3 rounded-lg"
-                      style={{ backgroundColor: `${deviceColor}20` }}
-                    >
-                      <IconComponent
-                        className="w-6 h-6"
-                        style={{ color: deviceColor }}
-                      />
-                    </div>
-                  );
-                })()}
+                {selectedDeviceIcon && (
+                  <div
+                    className="p-3 rounded-lg"
+                    style={{
+                      backgroundColor: `${selectedDeviceIcon.deviceColor}20`,
+                    }}
+                  >
+                    <selectedDeviceIcon.IconComponent
+                      className="w-6 h-6"
+                      style={{ color: selectedDeviceIcon.deviceColor }}
+                    />
+                  </div>
+                )}
                 <div>
                   <CardTitle className="text-xl flex items-center gap-2">
-                    {selectedDeviceObj.name}
+                    {statistics?.deviceInfo?.name || selectedDeviceObj.name}
                     <DeviceStatusIndicator deviceId={selectedDevice} />
+                    {isRealTimeEnabled && (
+                      <Badge
+                        variant="default"
+                        className="text-xs animate-pulse"
+                      >
+                        LIVE CHART
+                      </Badge>
+                    )}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {selectedDeviceObj.type.replace(/_/g, " ")} - {dataMode}{" "}
-                    Analysis
+                    {statistics?.deviceInfo?.type ||
+                      selectedDeviceObj.type.replace(/_/g, " ")}{" "}
+                    - {dataMode} Analysis
                   </p>
                 </div>
               </div>
@@ -914,6 +1090,11 @@ export default function HistoricalAnalytics({
                 >
                   {dataMode}
                 </Badge>
+                {isRealTimeEnabled && (
+                  <Badge variant="default" className="text-xs animate-pulse">
+                    UPDATING
+                  </Badge>
+                )}
                 {(isLoadingHistorical || isSyncing) && (
                   <Badge variant="outline" className="text-xs animate-pulse">
                     Loading...
@@ -924,20 +1105,20 @@ export default function HistoricalAnalytics({
           </CardHeader>
 
           <CardContent className="p-6">
-            {analyticsData.length > 0 ? (
+            {chartData.length > 0 ? (
               <div className="w-full">
                 <DataChart
                   title=""
                   description=""
-                  data={analyticsData}
+                  data={chartData}
                   type={chartType}
-                  colors={getChartColors()}
+                  colors={chartColors}
                   className="w-full h-[500px]"
                 />
                 <div className="mt-4 text-center space-y-2">
                   <div className="flex items-center justify-center gap-4 text-xs">
                     <Badge variant="secondary">
-                      {analyticsData.length} total points
+                      {chartData.length} total points
                     </Badge>
                     {statistics?.hasHistorical && (
                       <Badge variant="outline">
@@ -948,8 +1129,21 @@ export default function HistoricalAnalytics({
                       <Badge variant="default">Live: Active</Badge>
                     )}
                     <Badge variant="outline">
-                      Updated: {new Date().toLocaleTimeString()}
+                      Updates: {statistics?.updateCount || 0}
                     </Badge>
+                    <Badge variant="outline">
+                      Last Update:{" "}
+                      {statistics?.lastChartUpdate
+                        ? new Date(
+                            statistics.lastChartUpdate
+                          ).toLocaleTimeString()
+                        : "Never"}
+                    </Badge>
+                    {isRealTimeEnabled && (
+                      <Badge variant="default" className="animate-pulse">
+                        Real-time Mode
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
@@ -987,7 +1181,52 @@ export default function HistoricalAnalytics({
         </Card>
       )}
 
-      {/* System Status Footer */}
+      {/* Metrics Legend with Real-time Status */}
+      {selectedDevice && metricNames.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="w-5 h-5" />
+              Metrics Legend
+              <Badge variant="outline" className="text-xs">
+                {dataMode} mode
+              </Badge>
+              {isRealTimeEnabled && (
+                <Badge variant="default" className="text-xs animate-pulse">
+                  Live Updates
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {metricNames.map((metric, index) => {
+                const color =
+                  chartColors[Math.min(index, chartColors.length - 1)];
+                return (
+                  <div
+                    key={metric}
+                    className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 transition-all duration-200 hover:scale-105"
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-sm font-medium capitalize">
+                      {metric.replace(/_/g, " ")}
+                    </span>
+                    {isRealTimeEnabled && hasRealtimeData && (
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Enhanced System Status Footer */}
       <Card className="bg-muted/30">
         <CardContent className="p-4">
           <div className="flex items-center justify-between text-sm">
@@ -1008,6 +1247,12 @@ export default function HistoricalAnalytics({
                   Socket: {isConnected ? "Connected" : "Disconnected"}
                 </span>
               </div>
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                <span>
+                  Real-time: {isRealTimeEnabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
               <span>
                 Active: {activeDevicesCount}/{stats.totalDevices}
               </span>
@@ -1016,9 +1261,18 @@ export default function HistoricalAnalytics({
                   Errors: {stats.errorDevices}
                 </span>
               )}
+              {statistics?.updateCount && (
+                <span className="text-blue-500">
+                  Chart Updates: {statistics.updateCount}
+                </span>
+              )}
             </div>
             <div className="text-muted-foreground">
-              Last refresh: {new Date().toLocaleTimeString()} • User: {username}
+              Last refresh:{" "}
+              {statistics?.lastChartUpdate
+                ? new Date(statistics.lastChartUpdate).toLocaleTimeString()
+                : "Never"}{" "}
+              • User: {username}
             </div>
           </div>
         </CardContent>

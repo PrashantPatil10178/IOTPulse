@@ -3,7 +3,7 @@ import axios from "axios";
 export const API_BASE_URL = "https://iot.webfuze.in/api";
 
 export const api = axios.create({
-  baseURL: import.meta.env.PROD ? API_BASE_URL : "http://localhost:3001/api",
+  baseURL: import.meta.env.PROD ? API_BASE_URL : "https://iot.webfuze.in/api",
   headers: {
     "Content-Type": "application/json",
   },

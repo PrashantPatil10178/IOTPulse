@@ -6,7 +6,7 @@ const options = {
   password: "0e82e608-bccc-4e47-9edf-aa1878a66e3f",
 };
 
-const client = mqtt.connect("mqtt://localhost:1883", options);
+const client = mqtt.connect("mqtt://mqtt.webfuze.in", options);
 
 client.on("connect", () => {
   console.log("Connected to MQTT broker");

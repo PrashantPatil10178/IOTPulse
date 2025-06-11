@@ -266,7 +266,7 @@ const generateClientId = () => {
 };
 
 const MQTT_CONFIG = {
-  brokerUrl: process.env.MQTT_BROKER_URL || "mqtt://localhost:1883",
+  brokerUrl: process.env.MQTT_BROKER_URL || "mqtt://mqtt.webfuze.in:1883",
   options: {
     clientId: generateClientId(),
     username: "superuser",

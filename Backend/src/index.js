@@ -34,7 +34,15 @@ const io = new Server(server, {
   cors: false,
 });
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://iotpulse.webfuze.in",
+      "https://iot.webfuze.in",
+    ],
+  })
+);
 app.use(express.json());
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

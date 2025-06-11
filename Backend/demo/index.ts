@@ -29,7 +29,7 @@ class IoTSimulator {
     apiKey: "d9fb83a35cf25ea8ca0942b5468cf019012fc70842d18a3dd885453e5ce0f600",
     authHeader:
       "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwMWQ4NDJkOC0yODI1LTQxZDctYWZlMC1lYWNjZDVjZTI3NTgiLCJpYXQiOjE3NDgwNzg0NDgsImV4cCI6MTc0ODE2NDg0OH0.hqiqw5URioppUyM1h1cSkD5wvb0FhLMfJYY7O1KXhN8",
-    endpoint: "http://localhost:3001/api/data",
+    endpoint: "https://iot.webfuze.in/api/data",
     sendInterval: 1000, // 1 second
     requestTimeout: 5000, // 5 seconds
     maxRetries: 2,

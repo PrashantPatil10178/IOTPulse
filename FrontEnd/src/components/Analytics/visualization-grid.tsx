@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,63 +12,184 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
-  BarChart3,
-  LineChart,
-  AreaChart,
   Grid3X3,
   Maximize2,
+  Gauge,
+  Activity,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  MapPin,
+  Clock,
+  Zap,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Thermometer,
+  Droplets,
+  Eye,
+  Lightbulb,
+  Plug,
+  Radio,
 } from "lucide-react";
-import DataChart from "@/components/dashboard/DataChart";
+import GaugeChart from "@/components/dashboard/GaugeChart";
+import StatusIndicator from "@/components/dashboard/StatusIndicator";
+import LiveMetricCard from "@/components/dashboard/LiveMetricCard";
+import CircularProgress from "@/components/dashboard/CircularProgress";
 import { getDeviceIcon, getDeviceColor } from "@/utils/device-utils";
+import { useSocket, useMultipleDevicesData } from "@/context/SocketContext";
+import { toast } from "sonner";
 
-interface VisualizationGridProps {
-  devices: any[];
-  deviceData: Record<string, any[]>;
-  visualizationConfigs: Record<string, any>;
+interface SensorData {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  deviceType: string;
+  timestamp: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    city: string;
+    country: string;
+    location: string;
+    isPrivateIP: boolean;
+    note?: string;
+  };
+  template: {
+    primaryMetric: string;
+    secondaryMetrics: string[];
+    chartType: string;
+    unit: string;
+    icon: string;
+    color: string;
+    category: string;
+  };
+  metrics: {
+    primary: {
+      name: string;
+      value: number;
+      unit: string;
+      min?: number;
+      max?: number;
+    };
+    secondary: Array<{
+      name: string;
+      value: number;
+      unit: string;
+      min?: number;
+      max?: number;
+    }>;
+  };
+  rawData: any;
+  visualization: {
+    chartType: string;
+    color: string;
+    icon: string;
+    category: string;
+  };
 }
 
-export default function VisualizationGrid({
+interface LiveDataVisualizationProps {
+  devices: Array<{
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+  }>;
+}
+
+export default function LiveDataVisualization({
   devices,
-  deviceData,
-  visualizationConfigs,
-}: VisualizationGridProps) {
+}: LiveDataVisualizationProps) {
   const [gridLayout, setGridLayout] = useState<"1" | "2" | "3">("2");
-  const [chartTypeOverride, setChartTypeOverride] = useState<
-    "auto" | "line" | "area" | "bar"
+  const [visualizationType, setVisualizationType] = useState<
+    "auto" | "gauge" | "status" | "metric"
   >("auto");
+  const [showOnlineOnly, setShowOnlineOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  const getChartData = (device: any) => {
-    const data = deviceData[device.id] || [];
-    return data.map((point) => ({
-      timestamp: point.timestamp,
-      value: point.data?.metrics?.primary?.value || 0,
-      ...(point.data?.metrics?.secondary?.reduce((acc: any, metric: any) => {
-        if (metric && metric.name && metric.value !== undefined) {
-          acc[metric.name] = metric.value;
-        }
-        return acc;
-      }, {}) || {}),
-    }));
-  };
+  const { subscribeToAllDevices, isConnected, forceDataSync } = useSocket();
+  const { devicesData, getDeviceData, getDeviceStatus, getAllActiveDevices } =
+    useMultipleDevicesData(devices.map((d) => d.id));
 
-  const getChartType = (deviceType: string): "line" | "area" | "bar" => {
-    if (chartTypeOverride !== "auto") {
-      return chartTypeOverride as "line" | "area" | "bar";
+  // Process devices with real-time data
+  const processedDevices = useMemo(() => {
+    return devices.map((device) => {
+      const socketData = getDeviceData(device.id);
+      const deviceStatus = getDeviceStatus(device.id);
+      const sensorData =
+        socketData && "0" in socketData
+          ? (socketData["0"] as SensorData)
+          : undefined;
+
+      return {
+        ...device,
+        sensorData,
+        socketData,
+        deviceStatus,
+        isLive: deviceStatus?.connectionStatus === "RECEIVING_DATA",
+        category: sensorData?.template?.category || "Generic",
+        lastUpdate: sensorData?.timestamp || null,
+      };
+    });
+  }, [devices, devicesData]);
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const cats = ["all", ...new Set(processedDevices.map((d) => d.category))];
+    return cats;
+  }, [processedDevices]);
+
+  // Subscribe to devices
+  useEffect(() => {
+    if (devices.length > 0 && isConnected) {
+      subscribeToAllDevices(devices.map((d) => d.id));
+    }
+  }, [devices, isConnected, subscribeToAllDevices]);
+
+  const getVisualizationType = (
+    device: any
+  ): "gauge" | "status" | "metric" | "circular" => {
+    if (visualizationType !== "auto") {
+      return visualizationType as "gauge" | "status" | "metric";
     }
 
-    const chartTypeMap: Record<string, "line" | "area" | "bar"> = {
-      TEMPERATURE_SENSOR: "area",
-      HUMIDITY_SENSOR: "line",
-      MOTION_DETECTOR: "bar",
-      SMART_LIGHT: "bar",
-      SMART_PLUG: "area",
-      CAMERA: "bar",
-      ENERGY_METER: "area",
-      WATER_METER: "line",
-      AIR_QUALITY_SENSOR: "area",
-      OTHER: "line",
-    };
-    return chartTypeMap[deviceType] || "line";
+    const { sensorData } = device;
+    const primaryMetric = sensorData?.metrics?.primary;
+    const deviceType = sensorData?.deviceType;
+
+    // Auto-select best visualization based on device type and data
+    if (!primaryMetric) return "status";
+
+    // For numeric values, use gauge or circular progress
+    if (typeof primaryMetric.value === "number") {
+      // Percentage-based metrics use circular progress
+      if (
+        primaryMetric.unit === "%" ||
+        primaryMetric.name.includes("level") ||
+        primaryMetric.name.includes("humidity")
+      ) {
+        return "circular";
+      }
+      // Temperature, pressure, power etc use gauge
+      if (
+        [
+          "temperature",
+          "pressure",
+          "powerUsage",
+          "flowRate",
+          "vibration_intensity",
+        ].includes(primaryMetric.name)
+      ) {
+        return "gauge";
+      }
+      // Default numeric to metric card
+      return "metric";
+    }
+
+    // Boolean and string values use status
+    return "status";
   };
 
   const getGridColumns = () => {
@@ -80,14 +201,27 @@ export default function VisualizationGrid({
     return colMap[gridLayout];
   };
 
-  const getCardHeight = () => {
-    const heightMap = {
-      "1": "h-[600px]",
-      "2": "h-[450px]",
-      "3": "h-[400px]",
-    };
-    return heightMap[gridLayout];
+  const handleForceSync = async (deviceId: string) => {
+    try {
+      const success = await forceDataSync(deviceId);
+      if (success) {
+        toast.success(`Device ${deviceId} synced successfully`);
+      } else {
+        toast.error(`Failed to sync device ${deviceId}`);
+      }
+    } catch (error) {
+      toast.error(`Error syncing device ${deviceId}`);
+    }
   };
+
+  const filteredDevices = processedDevices.filter((device) => {
+    const categoryMatch =
+      selectedCategory === "all" || device.category === selectedCategory;
+    const onlineMatch = !showOnlineOnly || device.isLive;
+    return categoryMatch && onlineMatch;
+  });
+
+  const activeDevices = getAllActiveDevices();
 
   return (
     <div className="space-y-6">
@@ -96,91 +230,108 @@ export default function VisualizationGrid({
         <CardHeader className="pb-4">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center gap-2">
-              <Grid3X3 className="w-5 h-5" />
-              <h2 className="text-2xl font-bold">
-                Advanced Device Visualizations
-              </h2>
-              <Badge variant="outline">{devices.length} Active Devices</Badge>
+              <Activity className="w-5 h-5" />
+              <h2 className="text-2xl font-bold">Live IoT Dashboard</h2>
+              <Badge variant="outline">{devices.length} Devices</Badge>
+              <Badge variant="default" className="bg-green-500">
+                <Wifi className="w-3 h-3 mr-1" />
+                {activeDevices.length} Live
+              </Badge>
+              <Badge variant="secondary" className="text-xs">
+                <Clock className="w-3 h-3 mr-1" />
+                {new Date().toLocaleTimeString()}
+              </Badge>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Maximize2 className="w-4 h-4 text-muted-foreground" />
-                <Select
-                  value={gridLayout}
-                  onValueChange={(value: "1" | "2" | "3") =>
-                    setGridLayout(value)
-                  }
-                >
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 Column</SelectItem>
-                    <SelectItem value="2">2 Columns</SelectItem>
-                    <SelectItem value="3">3 Columns</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === "all" ? "All Categories" : category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-muted-foreground" />
-                <Select
-                  value={chartTypeOverride}
-                  onValueChange={(value: "auto" | "line" | "area" | "bar") =>
-                    setChartTypeOverride(value)
-                  }
-                >
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="auto">Auto (Device-Based)</SelectItem>
-                    <SelectItem value="line">
-                      <div className="flex items-center gap-2">
-                        <LineChart className="w-4 h-4" />
-                        Force Line Charts
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="area">
-                      <div className="flex items-center gap-2">
-                        <AreaChart className="w-4 h-4" />
-                        Force Area Charts
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bar">
-                      <div className="flex items-center gap-2">
-                        <BarChart3 className="w-4 h-4" />
-                        Force Bar Charts
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select
+                value={gridLayout}
+                onValueChange={(value: "1" | "2" | "3") => setGridLayout(value)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Column</SelectItem>
+                  <SelectItem value="2">2 Columns</SelectItem>
+                  <SelectItem value="3">3 Columns</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={visualizationType}
+                onValueChange={(
+                  value: "auto" | "gauge" | "status" | "metric"
+                ) => setVisualizationType(value)}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto Select</SelectItem>
+                  <SelectItem value="gauge">Force Gauges</SelectItem>
+                  <SelectItem value="status">Force Status</SelectItem>
+                  <SelectItem value="metric">Force Metrics</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOnlineOnly(!showOnlineOnly)}
+              >
+                {showOnlineOnly ? "Show All" : "Live Only"}
+              </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      {/* Visualization Grid */}
+      {/* Live Data Grid */}
       <div className={`grid ${getGridColumns()} gap-6`}>
-        {devices.map((device) => {
+        {filteredDevices.map((device) => {
           const IconComponent = getDeviceIcon(device.type);
-          const config = visualizationConfigs[device.type] || {};
-          const chartData = getChartData(device);
-          const chartType = getChartType(device.type);
-          const deviceColor = getDeviceColor(device.type);
+          const { sensorData, deviceStatus, isLive } = device;
+
+          const visualType = getVisualizationType(device);
+          const deviceColor =
+            sensorData?.template?.color || getDeviceColor(device.type);
+          const hasError = deviceStatus?.error;
+          const primaryMetric = sensorData?.metrics?.primary;
+          const secondaryMetrics = sensorData?.metrics?.secondary || [];
 
           return (
             <Card
               key={device.id}
-              className="overflow-hidden border-2 hover:border-primary/20 transition-all duration-200"
+              className={`overflow-hidden transition-all duration-300 ${
+                isLive
+                  ? "border-2 border-green-200 shadow-lg shadow-green-100/50"
+                  : hasError
+                  ? "border-2 border-red-200 shadow-lg shadow-red-100/50"
+                  : "border hover:shadow-md"
+              }`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="p-3 rounded-xl shadow-sm"
+                      className="p-3 rounded-xl shadow-sm relative"
                       style={{
                         backgroundColor: `${deviceColor}15`,
                         border: `2px solid ${deviceColor}30`,
@@ -190,157 +341,191 @@ export default function VisualizationGrid({
                         className="w-6 h-6"
                         style={{ color: deviceColor }}
                       />
+                      {isLive && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                      )}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-lg font-bold">
-                        {device.name}
+                        {sensorData?.deviceName || device.name}
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {device.type.replace(/_/g, " ")} •{" "}
-                        {config?.category || "Generic"}
-                      </p>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>{device.category}</span>
+                        {sensorData?.location && (
+                          <>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{sensorData.location.city}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Badge
-                      variant={
-                        device.status === "ONLINE" ? "default" : "secondary"
-                      }
-                      style={{
-                        backgroundColor:
-                          device.status === "ONLINE" ? deviceColor : undefined,
-                        color: device.status === "ONLINE" ? "white" : undefined,
-                      }}
+                      variant={isLive ? "default" : "secondary"}
+                      className={isLive ? "bg-green-500" : ""}
                     >
-                      {device.status}
+                      {isLive ? "LIVE" : "OFFLINE"}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {chartType.charAt(0).toUpperCase() + chartType.slice(1)}
-                    </Badge>
+                    {hasError && (
+                      <Badge variant="destructive" className="text-xs">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        ERROR
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="p-4">
-                {chartData.length > 0 ? (
+                {sensorData && isLive ? (
                   <div className="space-y-4">
-                    {/* Latest Value Display */}
-                    <div
-                      className="flex items-center justify-between p-4 rounded-xl shadow-sm"
-                      style={{ backgroundColor: `${deviceColor}10` }}
-                    >
-                      <div>
-                        <div className="text-sm text-muted-foreground font-medium">
-                          {config?.primaryMetric?.replace(/_/g, " ") ||
-                            "Primary Metric"}
-                        </div>
-                        <div
-                          className="text-3xl font-bold"
-                          style={{ color: deviceColor }}
-                        >
-                          {chartData[chartData.length - 1]?.value?.toFixed(2) ||
-                            "N/A"}
-                          <span className="text-lg text-muted-foreground ml-2">
-                            {config?.unit || ""}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">
-                          Data Points
-                        </div>
-                        <div
-                          className="text-lg font-bold"
-                          style={{ color: deviceColor }}
-                        >
-                          {chartData.length}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Chart Container - Fixed height and proper sizing */}
-                    <div className={`w-full ${getCardHeight()} relative`}>
-                      <div className="absolute inset-0 p-2">
-                        <DataChart
-                          title=""
-                          description=""
-                          data={chartData}
-                          type={chartType}
-                          colors={[
-                            deviceColor,
-                            `${deviceColor}80`,
-                            `${deviceColor}60`,
-                          ]}
-                          timeFormat="time"
+                    {/* Main Visualization */}
+                    <div className="h-64 w-full flex items-center justify-center">
+                      {visualType === "gauge" &&
+                      typeof primaryMetric?.value === "number" ? (
+                        <GaugeChart
+                          value={primaryMetric.value}
+                          min={primaryMetric.min || 0}
+                          max={primaryMetric.max || primaryMetric.value * 1.5}
+                          unit={primaryMetric.unit}
+                          color={deviceColor}
+                          title={primaryMetric.name?.replace(/_/g, " ")}
                           className="w-full h-full"
                         />
-                      </div>
+                      ) : visualType === "circular" &&
+                        typeof primaryMetric?.value === "number" ? (
+                        <CircularProgress
+                          value={primaryMetric.value}
+                          max={primaryMetric.max || 100}
+                          unit={primaryMetric.unit}
+                          color={deviceColor}
+                          title={primaryMetric.name?.replace(/_/g, " ")}
+                          className="w-full h-full"
+                        />
+                      ) : visualType === "status" ? (
+                        <StatusIndicator
+                          status={primaryMetric?.value}
+                          deviceType={device.type}
+                          color={deviceColor}
+                          title={primaryMetric?.name?.replace(/_/g, " ")}
+                          className="w-full h-full"
+                        />
+                      ) : (
+                        <LiveMetricCard
+                          value={primaryMetric?.value}
+                          unit={primaryMetric?.unit}
+                          title={primaryMetric?.name?.replace(/_/g, " ")}
+                          color={deviceColor}
+                          className="w-full h-full"
+                        />
+                      )}
                     </div>
 
-                    {/* Secondary Metrics Grid */}
-                    {config?.secondaryMetrics &&
-                      Array.isArray(config.secondaryMetrics) &&
-                      config.secondaryMetrics.length > 0 && (
-                        <div className="grid grid-cols-2 gap-3 mt-4">
-                          {config.secondaryMetrics
-                            .slice(0, 4)
-                            .map((metric: string, index: number) => {
-                              const latestValue =
-                                chartData[chartData.length - 1]?.[metric];
-                              const metricColor = `${deviceColor}${
-                                80 - index * 15
-                              }`;
+                    {/* Secondary Metrics */}
+                    {secondaryMetrics.length > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {secondaryMetrics
+                          .slice(0, 4)
+                          .map((metric: any, index: number) => (
+                            <div
+                              key={metric.name || index}
+                              className="text-center p-3 rounded-lg border"
+                              style={{
+                                backgroundColor: `${deviceColor}08`,
+                                borderColor: `${deviceColor}30`,
+                              }}
+                            >
+                              <div className="text-xs text-muted-foreground font-medium mb-1">
+                                {metric.name?.replace(/_/g, " ")}
+                              </div>
+                              <div
+                                className="font-bold text-lg"
+                                style={{ color: deviceColor }}
+                              >
+                                {typeof metric.value === "number"
+                                  ? metric.value.toFixed(2)
+                                  : metric.value?.toString() || "N/A"}
+                                {metric.unit && (
+                                  <span className="text-xs ml-1">
+                                    {metric.unit}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    )}
 
-                              return (
-                                <div
-                                  key={metric}
-                                  className="text-center p-3 rounded-lg border-2"
-                                  style={{
-                                    backgroundColor: `${deviceColor}08`,
-                                    borderColor: `${deviceColor}20`,
-                                  }}
-                                >
-                                  <div className="text-xs text-muted-foreground font-medium mb-1">
-                                    {metric.replace(/_/g, " ")}
-                                  </div>
-                                  <div
-                                    className="font-bold text-lg"
-                                    style={{ color: metricColor }}
-                                  >
-                                    {latestValue?.toFixed(1) || "N/A"}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                    {/* Energy Meter Specific Info */}
+                    {sensorData.deviceType === "ENERGY_METER" &&
+                      sensorData.rawData?.cost && (
+                        <div
+                          className="p-3 rounded-lg flex items-center justify-between"
+                          style={{ backgroundColor: `${deviceColor}10` }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <DollarSign
+                              className="w-5 h-5"
+                              style={{ color: deviceColor }}
+                            />
+                            <span className="font-medium">Current Cost</span>
+                          </div>
+                          <div
+                            className="text-xl font-bold"
+                            style={{ color: deviceColor }}
+                          >
+                            ₹{sensorData.rawData.cost.toFixed(2)}
+                          </div>
                         </div>
                       )}
 
-                    {/* Device Actions */}
-                    <div className="flex justify-center pt-2">
+                    {/* Last Update */}
+                    <div className="text-center text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3 inline mr-1" />
+                      Updated:{" "}
+                      {new Date(sensorData.timestamp).toLocaleTimeString()}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleForceSync(device.id)}
                         style={{
                           borderColor: `${deviceColor}40`,
                           color: deviceColor,
                         }}
-                        className="hover:bg-opacity-10"
                       >
-                        View Details
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Refresh
                       </Button>
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className={`${getCardHeight()} flex items-center justify-center text-muted-foreground`}
-                  >
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
                     <div className="text-center space-y-3">
                       <IconComponent className="w-16 h-16 mx-auto opacity-30" />
                       <div>
-                        <p className="font-medium">No Data Available</p>
-                        <p className="text-sm">
-                          Device not sending data via socket
+                        <p className="font-medium">
+                          {hasError ? "Device Error" : "No Live Data"}
                         </p>
+                        <p className="text-sm">
+                          {hasError ? hasError.message : "Waiting for data..."}
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleForceSync(device.id)}
+                          className="mt-2"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-1" />
+                          Retry
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -351,43 +536,45 @@ export default function VisualizationGrid({
         })}
       </div>
 
-      {/* Summary Stats */}
+      {/* Live Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Visualization Summary</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-5 h-5" />
+            Live System Status
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">
-                {devices.length}
-              </div>
-              <div className="text-sm text-blue-700">Total Devices</div>
-            </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
+              <div className="text-3xl font-bold text-green-600">
+                {activeDevices.length}
+              </div>
+              <div className="text-sm text-green-700 font-medium">
+                Live Devices
+              </div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-3xl font-bold text-blue-600">
+                {processedDevices.filter((d) => d.sensorData).length}
+              </div>
+              <div className="text-sm text-blue-700 font-medium">With Data</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-3xl font-bold text-yellow-600">
                 {
-                  devices.filter((d) => {
-                    const data = deviceData[d.id];
-                    return data && Array.isArray(data) && data.length > 0;
-                  }).length
+                  processedDevices.filter(
+                    (d) => !d.isLive && !d.deviceStatus?.error
+                  ).length
                 }
               </div>
-              <div className="text-sm text-green-700">With Data</div>
+              <div className="text-sm text-yellow-700 font-medium">Idle</div>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">
-                {Object.values(deviceData).reduce((sum, data) => {
-                  return sum + (Array.isArray(data) ? data.length : 0);
-                }, 0)}
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-3xl font-bold text-red-600">
+                {processedDevices.filter((d) => d.deviceStatus?.error).length}
               </div>
-              <div className="text-sm text-purple-700">Total Data Points</div>
-            </div>
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <div className="text-2xl font-bold text-orange-600">
-                {new Set(devices.map((d) => d.type)).size}
-              </div>
-              <div className="text-sm text-orange-700">Device Types</div>
+              <div className="text-sm text-red-700 font-medium">Errors</div>
             </div>
           </div>
         </CardContent>

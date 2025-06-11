@@ -335,22 +335,17 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     const connectSocket = () => {
       // console.log("🔌 Initializing Socket.IO connection");
 
-      const newSocket = io(
-        import.meta.env.PROD
-          ? "https://iot.webfuze.in"
-          : "http://localhost:3001",
-        {
-          auth: {
-            token: localStorage.getItem("iot-dashboard-token") || "",
-          },
-          transports: ["websocket", "polling"],
-          path: "/socket",
-          timeout: SOCKET_TIMEOUT,
-          forceNew: true,
-          reconnectionAttempts: 3,
-          reconnectionDelay: RECONNECT_DELAY,
-        }
-      );
+      const newSocket = io(import.meta.env.URL || "https://iot.webfuze.in", {
+        auth: {
+          token: localStorage.getItem("iot-dashboard-token") || "",
+        },
+        transports: ["websocket", "polling"],
+        path: "/socket",
+        timeout: SOCKET_TIMEOUT,
+        forceNew: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: RECONNECT_DELAY,
+      });
 
       // Connection event handlers
       newSocket.on("connect", () => {
