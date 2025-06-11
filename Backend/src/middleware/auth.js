@@ -4,7 +4,6 @@ import { prisma } from "../lib/prisma.js";
 export const authenticateJWT = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    console.log("Authorization header:", authHeader);
 
     if (!authHeader) {
       return res.status(401).json({ error: "Authorization header missing" });

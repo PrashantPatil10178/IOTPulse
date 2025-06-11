@@ -1,12 +1,15 @@
 {
   "name": "demo",
   "module": "index.ts",
-  "type": "module",
+  "type": "commonjs",
   "private": true,
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "mqtt": "^5.13.1"
   }
 }

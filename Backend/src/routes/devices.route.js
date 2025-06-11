@@ -1,5 +1,7 @@
 import express from "express";
 import { prisma } from "../lib/prisma.js";
+import { mqttController } from "../controllers/mqtt.controller.js";
+import { mosquittoConfig } from "../lib/mqttconfig.js";
 
 const router = express.Router();
 
@@ -86,6 +88,7 @@ router.post("/", async (req, res) => {
         userId: req.user.id,
       },
     });
+    await mosquittoConfig.addDeviceCredentials(device);
 
     res.status(201).json(device);
   } catch (error) {

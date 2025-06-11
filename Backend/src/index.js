@@ -20,6 +20,10 @@ import { setupDeviceHandlers } from "./socket/deviceHandlers.js";
 import { setupAlertHandlers } from "./socket/alertHandlers.js";
 import { iotRouter } from "./routes/iot.route.js";
 import { authenticateApiKey } from "./middleware/apikey.js";
+import {
+  mqttApiController,
+  mqttController,
+} from "./controllers/mqtt.controller.js";
 
 dotenv.config();
 
@@ -68,6 +72,8 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, async () => {
   try {
     await prisma.$connect();
+    await mqttController.initialize();
+
     console.log("Connected to database");
   } catch (error) {
     console.error("Database connection error:", error);
