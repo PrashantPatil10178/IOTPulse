@@ -8,9 +8,12 @@
   [![Stars](https://img.shields.io/github/stars/yourusername/iotpulse.svg)](https://github.com/yourusername/iotpulse/stargazers)
   
   **A unified IoT platform for streamlined device management and data visualization**
-  
+
+  [Dashboard]
   [🚀 Landing Page and dashboard]([[https://iotpulse.example.com](https://v0-iotpulses-landing-page.vercel.app/)](https://v0-iotpulses-landing-page.vercel.app/)) 
   [Link](https://v0-iotpulses-landing-page.vercel.app/)
+  [Documentation]
+  [Tutorial]
 </div>
 
 ---
