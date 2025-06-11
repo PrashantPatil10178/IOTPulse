@@ -1,20 +1,19 @@
 # IoTPulse
 
 <div align="center">
-  <img src="logo.png" alt="IoTPulse Logo"  width="200"/>
-  
+  <img src="logo.png" alt="IoTPulse Logo" width="200"/>
+
   [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
   [![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](https://github.com/yourusername/iotpulse/releases)
   [![Stars](https://img.shields.io/github/stars/yourusername/iotpulse.svg)](https://github.com/yourusername/iotpulse/stargazers)
-  
-  **A unified IoT platform for streamlined device management and data visualization**
 
-  [Dashboard]
-  [🚀 Landing Page and dashboard]([[https://iotpulse.example.com](https://v0-iotpulses-landing-page.vercel.app/)](https://v0-iotpulses-landing-page.vercel.app/)) 
-  [Link](https://v0-iotpulses-landing-page.vercel.app/)
-  [Documentation]
-  [Tutorial]
+  <h3><strong>A unified IoT platform for streamlined device management and data visualization</strong></h3>
+
+  🔗 [🌐 Landing Page](https://cdac.webfuze.in/) &nbsp;|&nbsp;
+  📊 [📡 Dashboard](https://iotpulse.webfuze.in/) &nbsp;|&nbsp;
+  📄 [📘 Documentation](https://cdac.webfuze.in/docs)
 </div>
+
 
 ---
 
