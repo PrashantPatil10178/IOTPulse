@@ -3,7 +3,7 @@ console.log("Starting MQTT client...");
 
 const options = {
   username: "Prashant178",
-  password: "Prashant178",
+  password: "0e82e608-bccc-4e47-9edf-aa1878a66e3f",
 };
 
 const client = mqtt.connect("mqtt://localhost:1883", options);
@@ -40,16 +40,10 @@ client.on("connect", () => {
       status: "active",
       batteryLevel: 91,
       signalStrength: 92,
-      metadata: {
-        location: "Pipeline Section B",
-        notes: "Monitoring hydraulic system",
-        calibrationDate: "2025-05-20T00:00:00Z",
-        firmware: "v1.3.2",
-      },
     });
 
     client.publish(
-      "iot/bf034754-ebc5-48d9-9ec2-d400fba64bf5/8bf4fe46-245b-4b30-851b-d218ee838bef/data",
+      "iot/bf034754-ebc5-48d9-9ec2-d400fba64bf5/0e82e608-bccc-4e47-9edf-aa1878a66e3f/data",
       payload,
       { qos: 1 },
       (err) => {
@@ -57,5 +51,5 @@ client.on("connect", () => {
         else console.log("MQTT data sent:", payload);
       }
     );
-  }, 5000);
+  }, 500);
 });

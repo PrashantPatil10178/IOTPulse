@@ -3,9 +3,6 @@ import path from "path";
 import { exec } from "child_process";
 import { prisma } from "./prisma.js";
 
-console.log("MosquittoConfigManager initialized");
-console.log(path.resolve(import.meta.dirname, "../../mosquitto/config"));
-
 class MosquittoConfigManager {
   constructor() {
     this.configPath =
@@ -23,69 +20,52 @@ class MosquittoConfigManager {
     }
   }
 
-  async generateMosquittoConfig() {
-    const configContent = `
-# Mosquitto Configuration for IoT Dashboard
-
-# Basic settings
-port 1883
-allow_anonymous false
-password_file ${this.passwordFile}
-acl_file ${this.aclFile}
-
-# Logging
-log_dest file /mosquitto/log/mosquitto.log
-log_type error
-log_type warning
-log_type notice
-log_type information
-connection_messages true
-log_timestamp true
-
-# Security
-allow_duplicate_messages false
-`;
-
-    const configFile = path.join(this.configPath, "mosquitto.conf");
-    await fs.writeFile(configFile, configContent.trim());
-  }
-
   async addDeviceCredentials(device) {
-    await this.ensureConfigDirectory();
+    try {
+      await this.ensureConfigDirectory();
 
-    // Get user information
-    const user = await prisma.user.findUnique({
-      where: { id: device.userId },
-    });
+      // Get user information
+      const user = await prisma.user.findUnique({
+        where: { id: device.userId },
+      });
 
-    if (!user) {
-      throw new Error(`User not found for device ${device.id}`);
+      if (!user) {
+        throw new Error(`User not found for device ${device.id}`);
+      }
+
+      // Username format: devicename
+      const mqttUsername = `${user.username}`;
+      const mqttPassword = device.id;
+
+      // Add to password file
+      await this.addToPasswordFile(mqttUsername, mqttPassword);
+
+      // Update ACL permissions
+      await this.updateACLForDevice(device, user, mqttUsername);
+
+      // Reload Mosquitto config (send SIGHUP)
+      await this.reloadMosquitto();
+
+      return {
+        username: mqttUsername,
+        password: mqttPassword,
+        topics: {
+          publish: [
+            `iot/${user.username}/${device.id}/data`,
+            `iot/${user.username}/${device.id}/status`,
+          ],
+          subscribe: [`iot/${user.id}/${device.id}/commands`],
+        },
+      };
+    } catch (error) {
+      console.error("❌ Failed to add device credentials:", {
+        deviceId: device?.id,
+        userId: device?.userId,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw new Error(`addDeviceCredentials failed: ${error.message}`);
     }
-
-    // Username format: devicename
-    const mqttUsername = `${user.username}`;
-    const mqttPassword = device.id;
-
-    // Add to password file
-    await this.addToPasswordFile(mqttUsername, mqttPassword);
-
-    // Update ACL permissions
-    await this.updateACLForDevice(device, user, mqttUsername);
-
-    // Reload Mosquitto config (send SIGHUP)
-    await this.reloadMosquitto();
-
-    return {
-      username: mqttUsername,
-      password: mqttPassword,
-      topics: {
-        publish: [
-          `iot/${user.username}/${device.id}/data`,
-          `iot/${user.username}/${device.id}/status`,
-        ],
-        subscribe: [`iot/${user.id}/${device.id}/commands`],
-      },
-    };
   }
 
   async addToPasswordFile(username, password) {
@@ -105,7 +85,6 @@ allow_duplicate_messages false
 
   async updateACLForDevice(device, user, mqttUsername) {
     try {
-      // Read existing ACL
       let aclContent = "";
       try {
         aclContent = await fs.readFile(this.aclFile, "utf8");
@@ -118,18 +97,44 @@ topic readwrite #
 `;
       }
 
-      // Add device permissions with iot/userid/deviceid format
-      const deviceACL = `
+      const deviceTopics = [
+        `topic write iot/${user.id}/${device.id}/data`,
+        `topic write iot/${user.id}/${device.id}/status`,
+        `topic read iot/${user.id}/${device.id}/commands`,
+      ];
+
+      // Ensure there's a 'user mqttUsername' block
+      let userBlockRegex = new RegExp(
+        `user ${mqttUsername}\\n([\\s\\S]*?)(?=\\nuser |$)`,
+        "g"
+      );
+      let match = userBlockRegex.exec(aclContent);
+
+      if (match) {
+        // User block exists, append missing topic rules
+        let userBlock = match[0];
+        let updatedBlock = userBlock;
+
+        for (const topicLine of deviceTopics) {
+          if (!userBlock.includes(topicLine)) {
+            updatedBlock += `${topicLine}\n`;
+          }
+        }
+
+        if (userBlock !== updatedBlock) {
+          aclContent = aclContent.replace(userBlock, updatedBlock);
+          await fs.writeFile(this.aclFile, aclContent);
+        } else {
+          console.log(`All topics for device ${device.id} already exist.`);
+        }
+      } else {
+        // User block doesn't exist, create new
+        const deviceACL = `
 # Device: ${device.name} (${device.id}) - User: ${user.username} (${user.id})
 user ${mqttUsername}
-topic write iot/${user.id}/${device.id}/data
-topic write iot/${user.id}/${device.id}/status
-topic read iot/${user.id}/${device.id}/commands
+${deviceTopics.join("\n")}
 
 `;
-
-      // Check if device ACL already exists
-      if (!aclContent.includes(`user ${mqttUsername}`)) {
         aclContent += deviceACL;
         await fs.writeFile(this.aclFile, aclContent);
       }
